@@ -1,0 +1,43 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+.next/
+build/
+out/
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+logs/
+
+# testing
+coverage/
+.nyc_output/
+
+# turbo
+.turbo/
+
+# database
+*.db
+*.sqlite
+
+# docker
+docker-compose.override.yml

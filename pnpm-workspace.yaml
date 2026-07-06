@@ -1,0 +1,12 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "services/*"
+  - "channels/*"
+  - "providers/**"
+  - "sdk/*"
+  - "plugins/*"
+  - "tools/*"
+  - "scripts/*"
+  - "infrastructure/*"
+  - "knowledge/*"

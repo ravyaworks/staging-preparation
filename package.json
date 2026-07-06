@@ -1,0 +1,19 @@
+{
+  "name": "conversation-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Multi-tenant AI Conversation Platform",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "clean": "turbo clean",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.1.0"
+}

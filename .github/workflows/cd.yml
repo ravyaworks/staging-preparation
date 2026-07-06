@@ -1,0 +1,31 @@
+name: CD
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm build
+      - name: Build Docker images
+        run: |
+          docker build -t conversation-platform/api:latest ./apps/api
+          docker build -t conversation-platform/dashboard:latest ./apps/dashboard
+      - name: Push to registry
+        run: |
+          docker push conversation-platform/api:latest
+          docker push conversation-platform/dashboard:latest
