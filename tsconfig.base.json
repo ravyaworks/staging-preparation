@@ -13,10 +13,25 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "dist",
-    "rootDir": "src",
     "jsx": "preserve",
     "incremental": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": false,
+    "baseUrl": ".",
+    "paths": {
+      "@conversation-platform/types": ["./packages/types/src"],
+      "@conversation-platform/types/*": ["./packages/types/src/*"],
+      "@conversation-platform/logger": ["./packages/logger/src"],
+      "@conversation-platform/logger/*": ["./packages/logger/src/*"],
+      "@conversation-platform/config": ["./packages/config/src"],
+      "@conversation-platform/config/*": ["./packages/config/src/*"],
+      "@conversation-platform/shared": ["./packages/shared/src"],
+      "@conversation-platform/shared/*": ["./packages/shared/src/*"],
+      "@conversation-platform/testing": ["./packages/testing/src"],
+      "@conversation-platform/testing/*": ["./packages/testing/src/*"]
+    }
   },
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist", ".next", "out", "coverage"]
 }

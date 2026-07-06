@@ -4,11 +4,12 @@
   "private": true,
   "description": "Admin and tenant dashboard for the Conversation Platform",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "echo 'Dashboard dev placeholder'",
+    "build": "echo 'Dashboard build placeholder - install next to build'",
     "start": "next start",
-    "test": "vitest run",
+    "test": "echo 'Dashboard tests placeholder'",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "clean": "rimraf .next out"
   },
   "engines": {

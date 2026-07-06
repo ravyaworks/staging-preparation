@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local"],
+  "globalDependencies": ["**/.env.*local", "tsconfig.base.json"],
   "pipeline": {
     "build": {
       "dependsOn": ["^build"],
@@ -12,16 +12,24 @@
     },
     "test": {
       "dependsOn": ["build"],
-      "outputs": []
+      "inputs": ["src/**/*.ts", "test/**/*.ts", "vitest.config.ts"],
+      "outputs": ["coverage/**"]
     },
     "lint": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**/*.ts", ".eslintrc.cjs"],
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**/*.ts", "tsconfig.json"],
+      "outputs": []
+    },
+    "format": {
       "outputs": []
     },
     "clean": {
       "cache": false
-    },
-    "typecheck": {
-      "dependsOn": ["^build"]
     }
   }
 }

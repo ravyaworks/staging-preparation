@@ -5,6 +5,7 @@ Shared libraries, engines, and utilities for the Conversation Platform.
 ## Categories
 
 ### Core
+
 - `auth/` — Authentication and authorization logic
 - `shared/` — Shared utilities and helpers
 - `config/` — Configuration management
@@ -12,12 +13,14 @@ Shared libraries, engines, and utilities for the Conversation Platform.
 - `types/` — Shared TypeScript types
 
 ### Data Layer
+
 - `database/` — Database client and ORM setup
 - `cache/` — Caching abstraction (Redis)
 - `queue/` — Message queue abstraction
 - `event-bus/` — Event-driven architecture bus
 
 ### Engines
+
 - `ai-engine/` — AI provider abstraction and orchestration
 - `conversation-engine/` — Conversation routing and state management
 - `workflow-engine/` — Workflow execution engine
@@ -30,6 +33,7 @@ Shared libraries, engines, and utilities for the Conversation Platform.
 - `notification-engine/` — Notification dispatching
 
 ### Platform
+
 - `channel-core/` — Channel integration base classes
 - `tenant-engine/` — Multi-tenant isolation and management
 - `plugin-engine/` — Plugin system for extensibility

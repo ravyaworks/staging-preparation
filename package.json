@@ -6,14 +6,39 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "build:api": "turbo build --filter=@conversation-platform/api",
+    "build:dashboard": "turbo build --filter=@conversation-platform/dashboard",
     "test": "turbo test",
+    "test:unit": "turbo test --filter=./packages/*",
+    "test:integration": "turbo test --filter=./apps/*",
     "lint": "turbo lint",
-    "clean": "turbo clean",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+    "lint:fix": "turbo lint -- --fix",
+    "typecheck": "turbo typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yaml}\"",
+    "clean": "turbo clean && rimraf node_modules",
+    "reset": "pnpm clean && pnpm install",
+    "prepare": "husky || true",
+    "docker:dev": "docker compose -f docker-compose.yml up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
   },
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"
   },
-  "packageManager": "pnpm@9.1.0"
+  "packageManager": "pnpm@9.1.0",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "husky": "^9.0.0",
+    "prettier": "^3.2.0",
+    "rimraf": "^5.0.0",
+    "turbo": "^1.13.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.3.0",
+    "@vitest/coverage-v8": "^1.3.0"
+  }
 }

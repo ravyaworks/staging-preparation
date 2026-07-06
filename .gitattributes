@@ -1,0 +1,14 @@
+* text=auto eol=lf
+
+*.md diff=markdown
+*.ts diff=typescript
+*.tsx diff=typescript
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text
+
+*.lock linguist-generated
