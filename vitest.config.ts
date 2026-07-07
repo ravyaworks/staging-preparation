@@ -37,6 +37,7 @@ export default defineConfig({
       '@conversation-platform/auth': path.resolve(__dirname, 'packages/auth/src'),
       '@conversation-platform/queue': path.resolve(__dirname, 'packages/queue/src'),
       '@conversation-platform/event-bus': path.resolve(__dirname, 'packages/event-bus/src'),
+      '@conversation-platform/storage': path.resolve(__dirname, 'packages/storage/src'),
     },
   },
 });

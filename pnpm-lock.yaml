@@ -163,6 +163,8 @@ importers:
 
   packages/shared: {}
 
+  packages/storage: {}
+
   packages/testing: {}
 
   packages/types: {}

@@ -38,7 +38,9 @@
       "@conversation-platform/queue": ["./packages/queue/src"],
       "@conversation-platform/queue/*": ["./packages/queue/src/*"],
       "@conversation-platform/event-bus": ["./packages/event-bus/src"],
-      "@conversation-platform/event-bus/*": ["./packages/event-bus/src/*"]
+      "@conversation-platform/event-bus/*": ["./packages/event-bus/src/*"],
+      "@conversation-platform/storage": ["./packages/storage/src"],
+      "@conversation-platform/storage/*": ["./packages/storage/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", ".next", "out", "coverage"]
