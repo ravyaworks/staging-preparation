@@ -30,7 +30,15 @@
       "@conversation-platform/shared": ["./packages/shared/src"],
       "@conversation-platform/shared/*": ["./packages/shared/src/*"],
       "@conversation-platform/testing": ["./packages/testing/src"],
-      "@conversation-platform/testing/*": ["./packages/testing/src/*"]
+      "@conversation-platform/testing/*": ["./packages/testing/src/*"],
+      "@conversation-platform/database": ["./packages/database/src"],
+      "@conversation-platform/database/*": ["./packages/database/src/*"],
+      "@conversation-platform/auth": ["./packages/auth/src"],
+      "@conversation-platform/auth/*": ["./packages/auth/src/*"],
+      "@conversation-platform/queue": ["./packages/queue/src"],
+      "@conversation-platform/queue/*": ["./packages/queue/src/*"],
+      "@conversation-platform/event-bus": ["./packages/event-bus/src"],
+      "@conversation-platform/event-bus/*": ["./packages/event-bus/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", ".next", "out", "coverage"]

@@ -1,0 +1,19 @@
+{
+  "name": "@conversation-platform/queue",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Queue and job processing abstraction",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run --config ../../vitest.config.ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

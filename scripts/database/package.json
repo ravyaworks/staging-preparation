@@ -1,0 +1,13 @@
+{
+  "name": "@conversation-platform/database-seed",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Database seeding scripts",
+  "scripts": {
+    "seed": "tsx seed.ts"
+  },
+  "dependencies": {
+    "@conversation-platform/database": "workspace:*",
+    "@conversation-platform/auth": "workspace:*"
+  }
+}

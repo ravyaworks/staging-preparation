@@ -8,6 +8,7 @@ export default defineConfig({
     root: '.',
     include: ['**/*.{test,spec}.{ts,tsx,js,jsx}'],
     exclude: ['node_modules', 'dist', '.next', 'out'],
+    passWithNoTests: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
@@ -32,6 +33,10 @@ export default defineConfig({
       '@conversation-platform/config': path.resolve(__dirname, 'packages/config/src'),
       '@conversation-platform/shared': path.resolve(__dirname, 'packages/shared/src'),
       '@conversation-platform/testing': path.resolve(__dirname, 'packages/testing/src'),
+      '@conversation-platform/database': path.resolve(__dirname, 'packages/database/src'),
+      '@conversation-platform/auth': path.resolve(__dirname, 'packages/auth/src'),
+      '@conversation-platform/queue': path.resolve(__dirname, 'packages/queue/src'),
+      '@conversation-platform/event-bus': path.resolve(__dirname, 'packages/event-bus/src'),
     },
   },
 });

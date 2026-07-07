@@ -1,0 +1,297 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(255)
+  slug      String   @unique @db.VarChar(100)
+  domain    String?  @db.VarChar(255)
+  logoUrl   String?
+  settings  Json?    @default("{}")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  users        User[]
+  apiKeys      ApiKey[]
+  auditLogs    AuditLog[]
+  files        File[]
+  settingsMeta Setting[]
+  webhooks     Webhook[]
+  roles        Role[]
+  organizations Organization[]
+  events       Event[]
+  notifications Notification[]
+
+  @@map("tenants")
+}
+
+model User {
+  id                String    @id @default(uuid()) @db.Uuid
+  email             String    @unique @db.VarChar(255)
+  passwordHash      String    @db.VarChar(255)
+  firstName         String    @db.VarChar(100)
+  lastName          String    @db.VarChar(100)
+  isActive          Boolean   @default(true)
+  isVerified        Boolean   @default(false)
+  verificationToken String?   @db.VarChar(255)
+  verificationTokenExp DateTime?
+  resetToken        String?   @db.VarChar(255)
+  resetTokenExp     DateTime?
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  tenantId       String  @db.Uuid
+  tenant         Tenant  @relation(fields: [tenantId], references: [id])
+  organizationId String? @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  userRoles  UserRole[]
+  sessions   Session[]
+  apiKeys    ApiKey[]
+  auditLogs  AuditLog[]
+  files      File[]
+  notifications Notification[]
+
+  @@index([tenantId])
+  @@index([email])
+  @@map("users")
+}
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(255)
+  slug      String   @db.VarChar(100)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  tenantId String @db.Uuid
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  users User[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@map("organizations")
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(100)
+  slug        String   @db.VarChar(100)
+  description String?  @db.Text
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantId String? @db.Uuid
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
+  userRoles      UserRole[]
+  rolePermissions RolePermission[]
+
+  @@unique([slug, tenantId])
+  @@index([tenantId])
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @db.VarChar(255)
+  slug        String  @unique @db.VarChar(255)
+  description String? @db.Text
+  resource    String  @db.VarChar(100)
+  action      String  @db.VarChar(50)
+  createdAt   DateTime @default(now())
+
+  roles RolePermission[]
+
+  @@index([slug])
+  @@map("permissions")
+}
+
+model UserRole {
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+  roleId String @db.Uuid
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String     @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id])
+  permissionId String     @db.Uuid
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Session {
+  id            String   @id @default(uuid()) @db.Uuid
+  token         String   @unique @db.VarChar(512)
+  refreshToken  String   @unique @db.VarChar(512)
+  ipAddress     String?  @db.VarChar(45)
+  userAgent     String?  @db.Text
+  isActive      Boolean  @default(true)
+  expiresAt     DateTime
+  lastActivity  DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([token])
+  @@index([refreshToken])
+  @@map("sessions")
+}
+
+model ApiKey {
+  id         String    @id @default(uuid()) @db.Uuid
+  name       String    @db.VarChar(255)
+  keyPrefix  String    @db.VarChar(10)
+  hash       String    @db.VarChar(255)
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+
+  tenantId String @db.Uuid
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  userId   String? @db.Uuid
+  user     User?   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@map("api_keys")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  action    String   @db.VarChar(50)
+  entity    String   @db.VarChar(100)
+  entityId  String?  @db.VarChar(255)
+  metadata  Json?    @default("{}")
+  ipAddress String?  @db.VarChar(45)
+  createdAt DateTime @default(now())
+
+  tenantId String @db.Uuid
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  userId   String? @db.Uuid
+  user     User?   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model File {
+  id           String   @id @default(uuid()) @db.Uuid
+  originalName String   @db.VarChar(255)
+  mimeType     String   @db.VarChar(100)
+  size         Int
+  path         String   @db.VarChar(512)
+  url          String?  @db.VarChar(512)
+  provider     String   @default("local") @db.VarChar(50)
+  metadata     Json?    @default("{}")
+  createdAt    DateTime @default(now())
+
+  tenantId String @db.Uuid
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  userId   String? @db.Uuid
+  user     User?   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@map("files")
+}
+
+model Setting {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @db.VarChar(255)
+  value     Json
+  category  String   @default("general") @db.VarChar(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenantId String @db.Uuid
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, key])
+  @@map("settings")
+}
+
+model Webhook {
+  id              String    @id @default(uuid()) @db.Uuid
+  name            String    @db.VarChar(255)
+  url             String    @db.VarChar(512)
+  secret          String?   @db.VarChar(255)
+  events          String[]
+  isActive        Boolean   @default(true)
+  lastTriggeredAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenantId String @db.Uuid
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@map("webhooks")
+}
+
+model Event {
+  id          String    @id @default(uuid()) @db.Uuid
+  type        String    @db.VarChar(100)
+  payload     Json
+  status      String    @default("pending") @db.VarChar(20)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  lastError   String?   @db.Text
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  tenantId String? @db.Uuid
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@map("events")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  type      String   @db.VarChar(50)
+  channel   String   @db.VarChar(50)
+  recipient String   @db.VarChar(255)
+  subject   String?  @db.VarChar(255)
+  body      String   @db.Text
+  metadata  Json?    @default("{}")
+  status    String   @default("pending") @db.VarChar(20)
+  sentAt    DateTime?
+  createdAt DateTime @default(now())
+
+  tenantId String? @db.Uuid
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+  userId   String? @db.Uuid
+  user     User?   @relation(fields: [userId], references: [id])
+
+  @@index([status])
+  @@index([tenantId])
+  @@map("notifications")
+}
