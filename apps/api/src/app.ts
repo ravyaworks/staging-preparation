@@ -27,7 +27,7 @@ export function createApp(config: AppConfig, logger: Logger) {
 
   app.use('/api/v1/health', healthRoutes);
   app.use('/api/v1/auth', createAuthRoutes(config, logger));
-  app.use('/api/v1/tenants', createTenantRoutes());
+  app.use('/api/v1/tenants', createTenantRoutes(config));
 
   app.use(notFoundHandler);
   app.use(errorHandler);

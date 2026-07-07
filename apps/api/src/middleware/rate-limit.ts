@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import type { Request } from 'express';
 
 export function createRateLimiter(options: {
@@ -15,11 +15,10 @@ export function createRateLimiter(options: {
     legacyHeaders: false,
     message: options.message ?? 'Too many requests, please try again later',
     skipFailedRequests: options.skipFailedRequests ?? false,
+    validate: { xForwardedForHeader: false },
     keyGenerator: options.keyGenerator ?? ((req) => {
-      const forwarded = req.headers['x-forwarded-for'];
-      const ip = typeof forwarded === 'string' ? forwarded.split(',')[0]?.trim() : req.ip;
       const auth = (req as Request & { auth?: { userId?: string } }).auth;
-      return auth?.userId ?? ip ?? 'unknown';
+      return auth?.userId ?? ipKeyGenerator(req.ip ?? 'unknown');
     }),
   });
 }

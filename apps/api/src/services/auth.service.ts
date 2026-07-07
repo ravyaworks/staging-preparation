@@ -201,6 +201,85 @@ export function createAuthService(config: AppConfig, logger: Logger) {
     return user ? sanitizeUser(user) : null;
   }
 
+  async function forgotPassword(email: string) {
+    const prisma = getPrismaClient();
+    const userRepo = new UserRepository(prisma);
+    const { generateVerificationToken } = await import('@conversation-platform/auth');
+
+    const user = await userRepo.findByEmail(email);
+    if (!user) {
+      return { message: 'If the email exists, a reset link has been sent' };
+    }
+
+    const token = generateVerificationToken();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetToken: token, resetTokenExp: expiresAt },
+    });
+
+    logger.info({ userId: user.id }, 'Password reset token generated');
+    return { message: 'If the email exists, a reset link has been sent', resetToken: token };
+  }
+
+  async function resetPassword(token: string, newPassword: string) {
+    const prisma = getPrismaClient();
+
+    const user = await prisma.user.findFirst({
+      where: { resetToken: token, resetTokenExp: { gte: new Date() } },
+    });
+
+    if (!user) {
+      throw new ValidationError('Invalid or expired reset token');
+    }
+
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      throw new ValidationError(passwordValidation.message ?? 'Invalid password');
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, resetToken: null, resetTokenExp: null },
+    });
+
+    logger.info({ userId: user.id }, 'Password reset completed');
+    return { message: 'Password has been reset successfully' };
+  }
+
+  async function changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const prisma = getPrismaClient();
+    const userRepo = new UserRepository(prisma);
+
+    const user = await userRepo.findById(userId);
+    if (!user) {
+      throw new UnauthorizedError('User not found');
+    }
+
+    const valid = await comparePassword(currentPassword, user.passwordHash);
+    if (!valid) {
+      throw new ValidationError('Current password is incorrect');
+    }
+
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      throw new ValidationError(passwordValidation.message ?? 'Invalid password');
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    logger.info({ userId }, 'Password changed');
+    return { message: 'Password changed successfully' };
+  }
+
   return {
     register,
     login,
@@ -208,6 +287,9 @@ export function createAuthService(config: AppConfig, logger: Logger) {
     logout,
     logoutAll,
     getUserById,
+    forgotPassword,
+    resetPassword,
+    changePassword,
   };
 }
 

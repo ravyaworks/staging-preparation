@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { registerSchema, loginSchema, refreshTokenSchema } from '../validators';
+import { registerSchema, loginSchema, refreshTokenSchema, changePasswordSchema, forgotPasswordSchema, resetPasswordSchema } from '../validators';
 
 interface AuthService {
   register(params: { email: string; password: string; firstName: string; lastName: string; tenantName: string; tenantSlug: string }): Promise<unknown>;
@@ -7,6 +7,9 @@ interface AuthService {
   refreshTokens(refreshToken: string): Promise<unknown>;
   logout(sessionId: string): Promise<void>;
   getUserById(userId: string): Promise<unknown>;
+  forgotPassword(email: string): Promise<unknown>;
+  resetPassword(token: string, newPassword: string): Promise<unknown>;
+  changePassword(userId: string, currentPassword: string, newPassword: string): Promise<unknown>;
 }
 
 export function createAuthController(authService: AuthService) {
@@ -92,6 +95,41 @@ export function createAuthController(authService: AuthService) {
           data: user,
           meta: { timestamp: new Date().toISOString() },
         });
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async forgotPassword(req: Request, res: Response, next: NextFunction) {
+      try {
+        const parsed = forgotPasswordSchema.parse(req.body);
+        const result = await authService.forgotPassword(parsed.email);
+        res.json({ success: true, data: result });
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async resetPassword(req: Request, res: Response, next: NextFunction) {
+      try {
+        const parsed = resetPasswordSchema.parse(req.body);
+        const result = await authService.resetPassword(parsed.token, parsed.password);
+        res.json({ success: true, data: result });
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async changePassword(req: Request, res: Response, next: NextFunction) {
+      try {
+        const parsed = changePasswordSchema.parse(req.body);
+        const auth = (req as Request & { auth?: { userId: string } }).auth;
+        if (!auth) {
+          res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } });
+          return;
+        }
+        const result = await authService.changePassword(auth.userId, parsed.currentPassword, parsed.newPassword);
+        res.json({ success: true, data: result });
       } catch (error) {
         next(error);
       }

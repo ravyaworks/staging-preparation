@@ -3,7 +3,7 @@ import { getPrismaClient } from '@conversation-platform/database';
 
 const router = Router();
 
-router.get('/health', async (_req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
   const checks: Record<string, { status: string; latency?: number }> = {};
   const start = Date.now();
 
@@ -29,12 +29,12 @@ router.get('/health', async (_req: Request, res: Response) => {
   });
 });
 
-router.get('/health/ready', (_req: Request, res: Response) => {
-  res.json({ status: 'ready', timestamp: new Date().toISOString() });
+router.get('/ready', (_req: Request, res: Response) => {
+  res.json({ success: true, data: { status: 'ready', database: 'connected' }, meta: { timestamp: new Date().toISOString() } });
 });
 
-router.get('/health/live', (_req: Request, res: Response) => {
-  res.json({ status: 'alive', timestamp: new Date().toISOString() });
+router.get('/live', (_req: Request, res: Response) => {
+  res.json({ success: true, data: { status: 'alive' }, meta: { timestamp: new Date().toISOString() } });
 });
 
 export { router as healthRoutes };

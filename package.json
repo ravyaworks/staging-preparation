@@ -8,7 +8,7 @@
     "build": "turbo build",
     "build:api": "turbo build --filter=@conversation-platform/api",
     "build:dashboard": "turbo build --filter=@conversation-platform/dashboard",
-    "test": "turbo test",
+    "test": "turbo test --filter=./packages/* --filter=./apps/*",
     "test:unit": "turbo test --filter=./packages/*",
     "test:integration": "turbo test --filter=./apps/*",
     "lint": "turbo lint",

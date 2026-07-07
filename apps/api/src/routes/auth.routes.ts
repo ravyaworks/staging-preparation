@@ -14,6 +14,8 @@ export function createAuthRoutes(config: AppConfig, logger: Logger) {
   router.post('/login', controller.login.bind(controller));
   router.post('/refresh', controller.refresh.bind(controller));
   router.post('/logout', controller.logout.bind(controller));
+  router.post('/forgot-password', controller.forgotPassword.bind(controller));
+  router.post('/reset-password', controller.resetPassword.bind(controller));
 
   const jwtConfig = {
     secret: config.auth.jwtSecret,
@@ -24,6 +26,7 @@ export function createAuthRoutes(config: AppConfig, logger: Logger) {
   };
 
   router.get('/me', authenticate(jwtConfig), controller.me.bind(controller));
+  router.post('/change-password', authenticate(jwtConfig), controller.changePassword.bind(controller));
 
   return router;
 }
