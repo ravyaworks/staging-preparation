@@ -1,16 +1,67 @@
-# Android SDK — Placeholder
+# Conversation Platform Android SDK
 
-The Android (Kotlin) SDK for the Conversation Platform is not yet available.
+Kotlin SDK for the Conversation Platform API.
 
-This directory is a placeholder for future development. Check back for updates.
+## Installation
 
-## Planned features
+Add to your project's `settings.gradle.kts`:
 
-- Kotlin-native client for the Conversation Platform API
-- Coroutine-based async operations
-- Firebase Cloud Messaging integration
-- Local notification support
+```kotlin
+include(':conversation-platform-sdk')
+project(':conversation-platform-sdk').projectDir = file('sdk/android')
+```
 
-## Status
+Add to your module's `build.gradle.kts`:
 
-Not yet implemented. Track progress at https://github.com/anomalyco/conversation-platform.
+```kotlin
+implementation(project(":conversation-platform-sdk"))
+```
+
+## Usage
+
+```kotlin
+val client = ConversationClient(
+    baseUrl = "https://api.example.com",
+    apiKey = "your-api-key"
+)
+
+lifecycleScope.launch {
+    val conversations = client.listConversations()
+    val message = client.sendMessage("conv-123", content = "Hello!")
+}
+```
+
+## API
+
+| Method | Description |
+|--------|-------------|
+| `listConversations()` | List conversations with pagination |
+| `getConversation(id)` | Get a single conversation |
+| `createConversation(channelId)` | Create a new conversation |
+| `listMessages(conversationId)` | List messages for a conversation |
+| `sendMessage(conversationId, content)` | Send a message |
+| `listChannels()` | List connected channels |
+| `connectChannel(type, config)` | Connect a channel |
+| `disconnectChannel(type)` | Disconnect a channel |
+| `listWebhooks()` | List registered webhooks |
+| `createWebhook(url, events)` | Register a webhook |
+| `deleteWebhook(id)` | Delete a webhook |
+| `searchKnowledge(query)` | Search knowledge base |
+| `listDocuments(libraryId)` | List documents in a library |
+| `listWorkflows()` | List workflows |
+| `executeWorkflow(id, input)` | Execute a workflow |
+| `queryAnalytics(metric, ...)` | Query analytics data |
+
+## Requirements
+
+- Android API 24+
+- Kotlin 1.9+
+- Coroutines
+- OkHttp 4.12+
+- Gson 2.10+
+
+## Building
+
+```bash
+./gradlew :conversation-platform-sdk:assembleRelease
+```
