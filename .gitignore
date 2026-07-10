@@ -46,3 +46,6 @@ docker-compose.override.yml
 # temp
 tmp/
 temp/
+
+# build info
+*.tsbuildinfo

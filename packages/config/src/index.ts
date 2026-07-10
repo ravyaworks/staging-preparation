@@ -21,6 +21,24 @@ export interface AppConfig {
   cors: { origins: string[]; methods: string[] };
   rateLimit: { windowMs: number; maxRequests: number };
   storage: { provider: string; localPath: string };
+  ai: {
+    defaultProvider: string;
+    defaultModel: string;
+    maxRetries: number;
+    retryDelayMs: number;
+    timeout: number;
+    maxTokensPerRequest: number;
+    fallbackProvider?: string;
+    fallbackModel?: string;
+    trackCost: boolean;
+    openaiApiKey?: string;
+    anthropicApiKey?: string;
+    geminiApiKey?: string;
+    mistralApiKey?: string;
+    deepseekApiKey?: string;
+    openrouterApiKey?: string;
+    ollamaBaseUrl?: string;
+  };
 }
 
 const configSchema = z.object({
@@ -60,6 +78,24 @@ const configSchema = z.object({
   storage: z.object({
     provider: z.string().default('local'),
     localPath: z.string().default('./uploads'),
+  }),
+  ai: z.object({
+    defaultProvider: z.string().default('openai'),
+    defaultModel: z.string().default('gpt-4o-mini'),
+    maxRetries: z.coerce.number().int().positive().default(3),
+    retryDelayMs: z.coerce.number().int().positive().default(1000),
+    timeout: z.coerce.number().int().positive().default(60000),
+    maxTokensPerRequest: z.coerce.number().int().positive().default(4096),
+    fallbackProvider: z.string().optional(),
+    fallbackModel: z.string().optional(),
+    trackCost: z.coerce.boolean().default(true),
+    openaiApiKey: z.string().optional(),
+    anthropicApiKey: z.string().optional(),
+    geminiApiKey: z.string().optional(),
+    mistralApiKey: z.string().optional(),
+    deepseekApiKey: z.string().optional(),
+    openrouterApiKey: z.string().optional(),
+    ollamaBaseUrl: z.string().default('http://localhost:11434'),
   }),
 });
 
@@ -101,6 +137,24 @@ export function loadConfig(overrides?: Partial<AppConfig>): AppConfig {
     storage: {
       provider: process.env.STORAGE_PROVIDER,
       localPath: process.env.STORAGE_LOCAL_PATH,
+    },
+    ai: {
+      defaultProvider: process.env.AI_DEFAULT_PROVIDER,
+      defaultModel: process.env.AI_DEFAULT_MODEL,
+      maxRetries: process.env.AI_MAX_RETRIES,
+      retryDelayMs: process.env.AI_RETRY_DELAY_MS,
+      timeout: process.env.AI_TIMEOUT,
+      maxTokensPerRequest: process.env.AI_MAX_TOKENS_PER_REQUEST,
+      fallbackProvider: process.env.AI_FALLBACK_PROVIDER,
+      fallbackModel: process.env.AI_FALLBACK_MODEL,
+      trackCost: process.env.AI_TRACK_COST,
+      openaiApiKey: process.env.OPENAI_API_KEY,
+      anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+      geminiApiKey: process.env.GEMINI_API_KEY,
+      mistralApiKey: process.env.MISTRAL_API_KEY,
+      deepseekApiKey: process.env.DEEPSEEK_API_KEY,
+      openrouterApiKey: process.env.OPENROUTER_API_KEY,
+      ollamaBaseUrl: process.env.OLLAMA_BASE_URL,
     },
   };
 

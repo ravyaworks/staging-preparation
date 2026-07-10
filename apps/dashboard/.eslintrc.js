@@ -1,0 +1,21 @@
+module.exports = {
+  root: true,
+  env: { browser: true, es2022: true, node: true },
+  parser: '@typescript-eslint/parser',
+  parserOptions: { ecmaVersion: 2022, sourceType: 'module', ecmaFeatures: { jsx: true } },
+  plugins: ['@typescript-eslint'],
+  extends: ['next/core-web-vitals', 'plugin:@typescript-eslint/recommended'],
+  rules: {
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/no-non-null-assertion': 'error',
+    '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
+    'no-console': ['error', { allow: ['warn', 'error'] }],
+    'prefer-const': 'error',
+    'no-var': 'error',
+    eqeqeq: ['error', 'always'],
+    curly: ['error', 'all'],
+    'no-throw-literal': 'error',
+  },
+  ignorePatterns: ['dist', 'node_modules', '.next', 'out', 'coverage'],
+}

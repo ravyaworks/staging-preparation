@@ -1,0 +1,23 @@
+{
+  "name": "@conversation-platform/notification-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Notification architecture for email, SMS, push, webhooks, and internal notifications with templates and queue",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "test": "vitest run --config ../../vitest.config.ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@conversation-platform/types": "workspace:*",
+    "@conversation-platform/logger": "workspace:*",
+    "@conversation-platform/config": "workspace:*",
+    "@conversation-platform/shared": "workspace:*",
+    "@conversation-platform/queue": "workspace:*",
+    "@conversation-platform/event-bus": "workspace:*"
+  },
+  "engines": { "node": ">=20" }
+}

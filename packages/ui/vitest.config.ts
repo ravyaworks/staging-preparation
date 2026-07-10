@@ -1,0 +1,45 @@
+import { defineConfig } from 'vitest/config';
+import path from 'path';
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['node_modules', 'dist'],
+    setupFiles: [],
+  },
+  resolve: {
+    alias: {
+      '@conversation-platform/types': path.resolve(__dirname, '../types/src'),
+      '@conversation-platform/logger': path.resolve(__dirname, '../logger/src'),
+      '@conversation-platform/config': path.resolve(__dirname, '../config/src'),
+      '@conversation-platform/shared': path.resolve(__dirname, '../shared/src'),
+      '@conversation-platform/testing': path.resolve(__dirname, '../testing/src'),
+      '@conversation-platform/database': path.resolve(__dirname, '../database/src'),
+      '@conversation-platform/auth': path.resolve(__dirname, '../auth/src'),
+      '@conversation-platform/queue': path.resolve(__dirname, '../queue/src'),
+      '@conversation-platform/event-bus': path.resolve(__dirname, '../event-bus/src'),
+      '@conversation-platform/storage': path.resolve(__dirname, '../storage/src'),
+      '@conversation-platform/provider-framework': path.resolve(__dirname, '../provider-framework/src'),
+      '@conversation-platform/model-registry': path.resolve(__dirname, '../model-registry/src'),
+      '@conversation-platform/ai-engine': path.resolve(__dirname, '../ai-engine/src'),
+      '@conversation-platform/prompt-engine': path.resolve(__dirname, '../prompt-engine/src'),
+      '@conversation-platform/context-engine': path.resolve(__dirname, '../context-engine/src'),
+      '@conversation-platform/memory-engine': path.resolve(__dirname, '../memory-engine/src'),
+      '@conversation-platform/conversation-engine': path.resolve(__dirname, '../conversation-engine/src'),
+      '@conversation-platform/knowledge-engine': path.resolve(__dirname, '../knowledge-engine/src'),
+      '@conversation-platform/document-processor': path.resolve(__dirname, '../document-processor/src'),
+      '@conversation-platform/embeddings': path.resolve(__dirname, '../embeddings/src'),
+      '@conversation-platform/vector-search': path.resolve(__dirname, '../vector-search/src'),
+      '@conversation-platform/rag-pipeline': path.resolve(__dirname, '../rag-pipeline/src'),
+      '@conversation-platform/workflow-engine': path.resolve(__dirname, '../workflow-engine/src'),
+      '@conversation-platform/tool-engine': path.resolve(__dirname, '../tool-engine/src'),
+      '@conversation-platform/tools': path.resolve(__dirname, '../tools/src'),
+      '@conversation-platform/plugin-framework': path.resolve(__dirname, '../plugin-framework/src'),
+      '@conversation-platform/analytics-engine': path.resolve(__dirname, '../analytics-engine/src'),
+      '@conversation-platform/notification-engine': path.resolve(__dirname, '../notification-engine/src'),
+      '@conversation-platform/audit': path.resolve(__dirname, '../audit/src'),
+    },
+  },
+});

@@ -1,0 +1,25 @@
+{
+  "name": "@conversation-platform/channel-whatsapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WhatsApp Business channel - Meta WhatsApp Cloud API integration with messaging, templates, media, interactive messages, and webhook handling",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run --config ../../vitest.config.ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@conversation-platform/types": "workspace:*",
+    "@conversation-platform/channel-core": "workspace:*",
+    "@conversation-platform/shared": "workspace:*",
+    "@conversation-platform/logger": "workspace:*"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

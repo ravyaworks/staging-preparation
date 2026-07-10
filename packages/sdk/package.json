@@ -1,0 +1,22 @@
+{
+  "name": "@conversation-platform/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Core SDK client for the Conversation Platform",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@conversation-platform/types": "workspace:*"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

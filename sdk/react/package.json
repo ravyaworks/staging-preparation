@@ -1,0 +1,27 @@
+{
+  "name": "@conversation-platform/sdk-react",
+  "version": "0.1.0",
+  "private": true,
+  "description": "React SDK for the Conversation Platform",
+  "main": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "exports": {
+    ".": "./src/index.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@conversation-platform/sdk": "workspace:*",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

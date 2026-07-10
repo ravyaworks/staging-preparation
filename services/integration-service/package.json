@@ -1,0 +1,25 @@
+{
+  "name": "@conversation-platform/integration-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Integration management service for connected channels, API keys, connection status, and usage tracking",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run --config ../../vitest.config.ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@conversation-platform/types": "workspace:*",
+    "@conversation-platform/channel-core": "workspace:*",
+    "@conversation-platform/logger": "workspace:*",
+    "@conversation-platform/event-bus": "workspace:*"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

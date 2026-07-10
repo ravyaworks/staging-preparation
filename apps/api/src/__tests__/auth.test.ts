@@ -98,6 +98,16 @@ const mockConfig: AppConfig = {
   cors: { origins: ['*'], methods: ['GET', 'POST'] },
   rateLimit: { windowMs: 60000, maxRequests: 1000 },
   storage: { provider: 'local', localPath: './uploads' },
+  ai: {
+    defaultProvider: 'openai',
+    defaultModel: 'gpt-4o-mini',
+    maxRetries: 3,
+    retryDelayMs: 1000,
+    timeout: 60000,
+    maxTokensPerRequest: 4096,
+    trackCost: true,
+    ollamaBaseUrl: 'http://localhost:11434',
+  },
 };
 
 describe('Auth API', () => {

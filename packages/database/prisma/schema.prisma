@@ -295,3 +295,45 @@ model Notification {
   @@index([tenantId])
   @@map("notifications")
 }
+
+model Conversation {
+  id        String            @id @default(uuid()) @db.Uuid
+  title     String?           @db.VarChar(255)
+  status    String            @default("active") @db.VarChar(20)
+  channel   String?           @db.VarChar(50)
+  metadata  Json?             @default("{}")
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  deletedAt DateTime?
+
+  tenantId String  @db.Uuid
+  tenant   Tenant  @relation(fields: [tenantId], references: [id])
+  userId   String? @db.Uuid
+  user     User?   @relation(fields: [userId], references: [id])
+
+  messages Message[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([status])
+  @@map("conversations")
+}
+
+model Message {
+  id        String   @id @default(uuid()) @db.Uuid
+  role      String   @db.VarChar(20)
+  content   String   @db.Text
+  provider  String?  @db.VarChar(50)
+  model     String?  @db.VarChar(100)
+  tokenCount Int?    
+  latency   Int?     
+  metadata  Json?    @default("{}")
+  createdAt DateTime @default(now())
+
+  conversationId String     @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("messages")
+}
