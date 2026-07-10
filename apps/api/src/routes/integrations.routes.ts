@@ -2,11 +2,17 @@ import { Router, type Request, type Response } from 'express';
 import { IntegrationManager, ApiKeyManager, UsageTracker } from '@conversation-platform/integration-service';
 import type { IntegrationConfig } from '@conversation-platform/integration-service';
 import type { ChannelType } from '@conversation-platform/channel-core';
+import { getPrismaClient, IntegrationRepository, IntegrationLogRepository, IntegrationUsageRepository, ApiKeyRepository } from '@conversation-platform/database';
 
 const router: import('express').Router = Router();
-const manager = new IntegrationManager();
-const apiKeyManager = new ApiKeyManager();
-const usageTracker = new UsageTracker();
+const prisma = getPrismaClient();
+const integrationRepo = new IntegrationRepository(prisma);
+const integrationLogRepo = new IntegrationLogRepository(prisma);
+const integrationUsageRepo = new IntegrationUsageRepository(prisma);
+const apiKeyRepo = new ApiKeyRepository(prisma);
+const manager = new IntegrationManager(undefined, undefined, integrationRepo, integrationLogRepo);
+const apiKeyManager = new ApiKeyManager(apiKeyRepo);
+const usageTracker = new UsageTracker(undefined, integrationUsageRepo);
 
 function tenantId(req: Request): string {
   return (req as any).tenantId || 'default';

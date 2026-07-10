@@ -1,7 +1,13 @@
 import type { WebhookConfig, WebhookRegistration } from './types'
+import type { WebhookRepository } from '@conversation-platform/database'
 
 export class WebhookRegistry {
   private webhooks = new Map<string, WebhookRegistration>()
+  private repo?: WebhookRepository
+
+  constructor(repo?: WebhookRepository) {
+    this.repo = repo
+  }
 
   register(config: WebhookConfig): WebhookRegistration {
     const registration: WebhookRegistration = {
@@ -10,11 +16,29 @@ export class WebhookRegistry {
       consecutiveFailures: 0,
     }
     this.webhooks.set(config.id, registration)
+
+    if (this.repo) {
+      this.repo.create({
+        name: config.name,
+        url: config.url,
+        secret: config.secret,
+        events: config.events,
+        isActive: config.enabled,
+        tenant: { connect: { id: config.tenantId } },
+      }).catch(() => {})
+    }
+
     return registration
   }
 
   unregister(webhookId: string): boolean {
-    return this.webhooks.delete(webhookId)
+    const result = this.webhooks.delete(webhookId)
+
+    if (result && this.repo) {
+      this.repo.remove(webhookId).catch(() => {})
+    }
+
+    return result
   }
 
   get(webhookId: string): WebhookRegistration | undefined {
@@ -44,6 +68,12 @@ export class WebhookRegistry {
     const reg = this.webhooks.get(webhookId)
     if (reg) {
       reg.status = status
+
+      if (this.repo) {
+        this.repo.update(webhookId, {
+          isActive: status === 'active',
+        }).catch(() => {})
+      }
     }
   }
 
@@ -64,6 +94,12 @@ export class WebhookRegistry {
       if (reg.consecutiveFailures >= 10) {
         reg.status = 'failing'
       }
+    }
+
+    if (this.repo) {
+      this.repo.update(webhookId, {
+        lastTriggeredAt: new Date(),
+      }).catch(() => {})
     }
   }
 

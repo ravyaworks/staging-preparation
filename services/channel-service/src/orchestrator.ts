@@ -3,6 +3,7 @@ import type { EventBus } from '@conversation-platform/event-bus'
 import { ChannelRegistry, ChannelManager, ChannelConfigLoader } from '@conversation-platform/channel-core'
 import type { ChannelConfig, ChannelAuthConfig, ChannelType, ChannelStatus, ChannelInterface, ChannelRegistration } from '@conversation-platform/channel-core'
 import { ChannelError } from '@conversation-platform/channel-core'
+import type { ChannelConnectionRepository } from '@conversation-platform/database'
 
 export interface ChannelOrchestratorOptions {
   logger?: Logger
@@ -16,8 +17,9 @@ export class ChannelOrchestrator {
   public configLoader: ChannelConfigLoader
   private logger?: Logger
   private eventBus?: EventBus
+  private connectionRepo?: ChannelConnectionRepository
 
-  constructor(options: ChannelOrchestratorOptions = {}) {
+  constructor(options: ChannelOrchestratorOptions = {}, connectionRepo?: ChannelConnectionRepository) {
     this.registry = new ChannelRegistry()
     this.manager = new ChannelManager(this.registry, {
       logger: options.logger,
@@ -26,6 +28,7 @@ export class ChannelOrchestrator {
     this.configLoader = new ChannelConfigLoader()
     this.logger = options.logger
     this.eventBus = options.eventBus
+    this.connectionRepo = connectionRepo
   }
 
   registerChannelImplementation(type: ChannelType, implementation: ChannelInterface): void {
@@ -37,6 +40,30 @@ export class ChannelOrchestrator {
     this.logger?.info?.('Connecting channel', { tenantId, channelType: type })
     const registration = await this.manager.connect(tenantId, type, config, auth)
     this.configLoader.set(tenantId, type, config)
+
+    if (this.connectionRepo) {
+      const existing = await this.connectionRepo.findByTenantAndType(tenantId, type)
+      if (existing) {
+        await this.connectionRepo.update(existing.id, {
+          status: registration.status,
+          config: config as any,
+          authConfig: auth as any,
+          connectedAt: new Date(),
+          lastActivity: new Date(),
+        })
+      } else {
+        await this.connectionRepo.create({
+          channelType: type,
+          name: implementation(type),
+          status: registration.status,
+          config: config as any,
+          authConfig: auth as any,
+          connectedAt: new Date(),
+          lastActivity: new Date(),
+          tenant: { connect: { id: tenantId } },
+        })
+      }
+    }
 
     await this.eventBus?.publish('channel.connected', {
       tenantId,
@@ -53,6 +80,16 @@ export class ChannelOrchestrator {
     await this.manager.disconnect(tenantId, type)
     this.configLoader.remove(tenantId, type)
 
+    if (this.connectionRepo) {
+      const existing = await this.connectionRepo.findByTenantAndType(tenantId, type)
+      if (existing) {
+        await this.connectionRepo.update(existing.id, {
+          status: 'disconnected',
+          error: null,
+        })
+      }
+    }
+
     await this.eventBus?.publish('channel.disconnected', {
       tenantId,
       channelType: type,
@@ -63,6 +100,16 @@ export class ChannelOrchestrator {
   async reconnectChannel(tenantId: string, type: ChannelType): Promise<void> {
     this.logger?.info?.('Reconnecting channel', { tenantId, channelType: type })
     await this.manager.reconnect(tenantId, type)
+
+    if (this.connectionRepo) {
+      const existing = await this.connectionRepo.findByTenantAndType(tenantId, type)
+      if (existing) {
+        await this.connectionRepo.update(existing.id, {
+          status: 'connected',
+          lastActivity: new Date(),
+        })
+      }
+    }
 
     await this.eventBus?.publish('channel.reconnected', {
       tenantId,
@@ -86,6 +133,15 @@ export class ChannelOrchestrator {
     const impl = this.registry.getImplementation(type)
     const messages = await impl.processIncoming(rawPayload, context)
 
+    if (this.connectionRepo) {
+      const existing = await this.connectionRepo.findByTenantAndType(tenantId, type)
+      if (existing) {
+        await this.connectionRepo.update(existing.id, {
+          lastActivity: new Date(),
+        })
+      }
+    }
+
     for (const message of messages) {
       await this.eventBus?.publish('message.received', {
         tenantId,
@@ -102,6 +158,11 @@ export class ChannelOrchestrator {
     return this.manager.listChannels({ tenantId })
   }
 
+  async getConnectedChannelsFromDb(tenantId: string) {
+    if (!this.connectionRepo) return undefined
+    return this.connectionRepo.findByTenant(tenantId)
+  }
+
   getChannelHealth(tenantId: string, type: ChannelType) {
     return this.manager.getHealth(tenantId, type)
   }
@@ -114,6 +175,15 @@ export class ChannelOrchestrator {
   async updateChannelConfig(tenantId: string, type: ChannelType, config: Partial<ChannelConfig>): Promise<void> {
     await this.manager.updateConfig(tenantId, type, config)
     this.configLoader.set(tenantId, type, { ...this.configLoader.get(tenantId, type), ...config } as ChannelConfig)
+
+    if (this.connectionRepo) {
+      const existing = await this.connectionRepo.findByTenantAndType(tenantId, type)
+      if (existing) {
+        await this.connectionRepo.update(existing.id, {
+          config: { ...(existing.config as any), ...config } as any,
+        })
+      }
+    }
   }
 
   listRegisteredImplementations(): ChannelType[] {
@@ -124,4 +194,8 @@ export class ChannelOrchestrator {
     this.manager.dispose()
     this.configLoader.clear()
   }
+}
+
+function implementation(type: ChannelType): string {
+  return `${type} Channel`
 }

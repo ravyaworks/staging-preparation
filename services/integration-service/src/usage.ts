@@ -1,12 +1,15 @@
 import type { ChannelType } from '@conversation-platform/channel-core'
 import type { IntegrationUsage, IntegrationStats } from './types'
+import type { IntegrationUsageRepository } from '@conversation-platform/database'
 
 export class UsageTracker {
   private usageRecords: IntegrationUsage[] = []
   private maxSize: number
+  private usageRepo?: IntegrationUsageRepository
 
-  constructor(maxSize = 100000) {
+  constructor(maxSize = 100000, usageRepo?: IntegrationUsageRepository) {
     this.maxSize = maxSize
+    this.usageRepo = usageRepo
   }
 
   record(params: {
@@ -49,6 +52,18 @@ export class UsageTracker {
     if (this.usageRecords.length > this.maxSize) {
       this.usageRecords = this.usageRecords.slice(-this.maxSize)
     }
+
+    if (this.usageRepo) {
+      this.usageRepo.upsert({
+        integrationId: params.integrationId,
+        periodStart: new Date(periodStart),
+        periodEnd: now,
+        messagesSent: params.messagesSent ?? 0,
+        messagesReceived: params.messagesReceived ?? 0,
+        errors: params.errors ?? 0,
+        totalLatencyMs: params.latencyMs ?? 0,
+      }).catch(() => {})
+    }
   }
 
   getUsage(integrationId: string, days = 7): IntegrationUsage[] {
@@ -57,6 +72,22 @@ export class UsageTracker {
     return this.usageRecords
       .filter(r => r.integrationId === integrationId && new Date(r.periodStart) >= cutoff)
       .sort((a, b) => b.periodStart.localeCompare(a.periodStart))
+  }
+
+  async getUsageFromDb(integrationId: string, days = 7): Promise<IntegrationUsage[] | undefined> {
+    if (!this.usageRepo) return undefined
+    const records = await this.usageRepo.findByIntegration(integrationId, days)
+    return records.map(r => ({
+      integrationId: r.integrationId,
+      tenantId: '',
+      periodStart: r.periodStart.toISOString(),
+      periodEnd: r.periodEnd.toISOString(),
+      messagesSent: r.messagesSent,
+      messagesReceived: r.messagesReceived,
+      errors: r.errors,
+      totalLatencyMs: r.totalLatencyMs,
+      averageLatencyMs: (r.messagesSent + r.messagesReceived) > 0 ? r.totalLatencyMs / (r.messagesSent + r.messagesReceived) : 0,
+    }))
   }
 
   getTenantUsage(tenantId: string, days = 7): IntegrationUsage[] {

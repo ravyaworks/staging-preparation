@@ -29,6 +29,9 @@ model Tenant {
   organizations Organization[]
   events       Event[]
   notifications Notification[]
+  channelConnections ChannelConnection[]
+  integrations  Integration[]
+  conversations Conversation[]
 
   @@map("tenants")
 }
@@ -61,6 +64,7 @@ model User {
   auditLogs  AuditLog[]
   files      File[]
   notifications Notification[]
+  conversations Conversation[]
 
   @@index([tenantId])
   @@index([email])
@@ -294,6 +298,86 @@ model Notification {
   @@index([status])
   @@index([tenantId])
   @@map("notifications")
+}
+
+model ChannelConnection {
+  id           String    @id @default(uuid()) @db.Uuid
+  channelType  String    @db.VarChar(50)
+  name         String    @db.VarChar(255)
+  status       String    @default("disconnected") @db.VarChar(20)
+  config       Json?     @default("{}")
+  authConfig   Json?     @default("{}")
+  connectedAt  DateTime?
+  lastActivity DateTime?
+  error        String?   @db.Text
+  metadata     Json?     @default("{}")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenantId String @db.Uuid
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, channelType])
+  @@index([tenantId])
+  @@index([channelType])
+  @@map("channel_connections")
+}
+
+model Integration {
+  id          String   @id @default(uuid()) @db.Uuid
+  channelType String   @db.VarChar(50)
+  name        String   @db.VarChar(255)
+  enabled     Boolean  @default(true)
+  status      String   @default("pending") @db.VarChar(20)
+  settings    Json?    @default("{}")
+  error       String?  @db.Text
+  connectedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantId String @db.Uuid
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  logs   IntegrationLog[]
+  usages IntegrationUsage[]
+
+  @@index([tenantId])
+  @@index([channelType])
+  @@unique([tenantId, channelType, name])
+  @@map("integrations")
+}
+
+model IntegrationLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  type          String   @db.VarChar(20)
+  message       String   @db.Text
+  metadata      Json?    @default("{}")
+  createdAt     DateTime @default(now())
+
+  integrationId String @db.Uuid
+  integration   Integration @relation(fields: [integrationId], references: [id])
+
+  @@index([integrationId])
+  @@index([createdAt])
+  @@map("integration_logs")
+}
+
+model IntegrationUsage {
+  id              String   @id @default(uuid()) @db.Uuid
+  periodStart     DateTime
+  periodEnd       DateTime
+  messagesSent    Int      @default(0)
+  messagesReceived Int     @default(0)
+  errors          Int      @default(0)
+  totalLatencyMs  Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  integrationId String @db.Uuid
+  integration   Integration @relation(fields: [integrationId], references: [id])
+
+  @@unique([integrationId, periodStart])
+  @@index([integrationId])
+  @@map("integration_usages")
 }
 
 model Conversation {

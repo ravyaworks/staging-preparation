@@ -1,9 +1,12 @@
 import { Router, type Request, type Response } from 'express';
 import { ChannelOrchestrator } from '@conversation-platform/channel-service';
 import type { ChannelType } from '@conversation-platform/channel-core';
+import { getPrismaClient, ChannelConnectionRepository } from '@conversation-platform/database';
 
 const router: import('express').Router = Router();
-const orchestrator = new ChannelOrchestrator();
+const prisma = getPrismaClient();
+const connectionRepo = new ChannelConnectionRepository(prisma);
+const orchestrator = new ChannelOrchestrator({}, connectionRepo);
 
 function tenantId(req: Request): string {
   return (req as any).tenantId || 'default';

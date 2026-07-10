@@ -1,9 +1,12 @@
 import { Router, type Request, type Response } from 'express';
 import { WebhookRegistry, WebhookDispatcher, WebhookMonitor, generateSecret } from '@conversation-platform/webhook-service';
 import type { WebhookConfig, WebhookEvent } from '@conversation-platform/webhook-service';
+import { getPrismaClient, WebhookRepository } from '@conversation-platform/database';
 
 const router: import('express').Router = Router();
-const registry = new WebhookRegistry();
+const prisma = getPrismaClient();
+const webhookRepo = new WebhookRepository(prisma);
+const registry = new WebhookRegistry(webhookRepo);
 const dispatcher = new WebhookDispatcher(registry);
 const monitor = new WebhookMonitor();
 

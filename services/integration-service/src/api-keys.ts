@@ -1,9 +1,15 @@
 import { createHash, randomBytes } from 'crypto'
 import type { IntegrationApiKey } from './types'
 import { IntegrationAuthError } from './types'
+import type { ApiKeyRepository } from '@conversation-platform/database'
 
 export class ApiKeyManager {
   private keys = new Map<string, IntegrationApiKey>()
+  private repo?: ApiKeyRepository
+
+  constructor(repo?: ApiKeyRepository) {
+    this.repo = repo
+  }
 
   createKey(params: {
     tenantId: string
@@ -29,6 +35,17 @@ export class ApiKeyManager {
     }
 
     this.keys.set(id, apiKey)
+
+    if (this.repo) {
+      this.repo.create({
+        name: params.name,
+        keyPrefix,
+        hash: keyHash,
+        expiresAt: params.expiresAt ? new Date(params.expiresAt) : undefined,
+        tenant: { connect: { id: params.tenantId } },
+      }).catch(() => {})
+    }
+
     return { key: apiKey, rawKey }
   }
 
@@ -60,6 +77,11 @@ export class ApiKeyManager {
     const key = this.keys.get(id)
     if (!key) return false
     key.enabled = false
+
+    if (this.repo) {
+      this.repo.deactivate(id).catch(() => {})
+    }
+
     return true
   }
 
