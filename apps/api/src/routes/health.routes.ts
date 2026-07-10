@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { getPrismaClient } from '@conversation-platform/database';
+import { getMetrics, resetMetrics } from '../middleware/metrics';
 
 const router: Router = Router();
 
@@ -35,6 +36,16 @@ router.get('/ready', (_req: Request, res: Response) => {
 
 router.get('/live', (_req: Request, res: Response) => {
   res.json({ success: true, data: { status: 'alive' }, meta: { timestamp: new Date().toISOString() } });
+});
+
+router.get('/metrics', (_req: Request, res: Response) => {
+  const metrics = getMetrics();
+  res.json({ success: true, data: { metrics, uptime: process.uptime(), memory: process.memoryUsage() } });
+});
+
+router.post('/metrics/reset', (_req: Request, res: Response) => {
+  resetMetrics();
+  res.json({ success: true, data: { reset: true } });
 });
 
 export { router as healthRoutes };

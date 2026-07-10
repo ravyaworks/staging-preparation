@@ -1,0 +1,75 @@
+# Default values for cp-api
+# This is a YAML-formatted file.
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/conversation-platform/conversation-platform
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: false
+  className: nginx
+  host: api.conversation-platform.local
+  tls: []
+  #  - secretName: cp-api-tls
+  #    hosts:
+  #      - api.conversation-platform.local
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+env:
+  NODE_ENV: production
+  PORT: "3000"
+  HOST: "0.0.0.0"
+
+envFromSecret: cp-api-secret
+
+postgresql:
+  host: postgres
+  port: 5432
+  database: conversation_platform
+  existingSecret: cp-postgres-secret
+  userKey: POSTGRES_USER
+  passwordKey: POSTGRES_PASSWORD
+
+redis:
+  host: redis
+  port: 6379
+  existingSecret: cp-redis-secret
+  urlKey: REDIS_URL
+
+probes:
+  liveness:
+    path: /api/v1/health
+    initialDelaySeconds: 10
+    periodSeconds: 15
+  readiness:
+    path: /api/v1/health
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

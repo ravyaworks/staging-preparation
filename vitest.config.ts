@@ -7,7 +7,7 @@ export default defineConfig({
     environment: 'node',
     root: '.',
     include: ['**/*.{test,spec}.{ts,tsx,js,jsx}'],
-    exclude: ['node_modules', 'dist', '.next', 'out'],
+    exclude: ['**/node_modules/**', 'dist', '.next', 'out'],
     passWithNoTests: true,
     coverage: {
       provider: 'v8',

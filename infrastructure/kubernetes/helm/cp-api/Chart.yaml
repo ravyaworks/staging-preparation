@@ -1,0 +1,14 @@
+apiVersion: v2
+name: cp-api
+description: Helm chart for the Conversation Platform API
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - conversation-platform
+  - api
+  - express
+home: https://github.com/conversation-platform/conversation-platform
+maintainers:
+  - name: Conversation Platform Team
+    email: team@conversation-platform.com

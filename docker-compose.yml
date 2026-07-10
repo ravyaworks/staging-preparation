@@ -14,7 +14,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cp_user -d conversation_platform"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cp_user} -d ${POSTGRES_DB:-conversation_platform}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -32,6 +32,27 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: cp-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cp_user}:${POSTGRES_PASSWORD:-cp_password}@postgres:5432/${POSTGRES_DB:-conversation_platform}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres-data:

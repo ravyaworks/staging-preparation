@@ -1,0 +1,15 @@
+{
+  "name": "@conversation-platform/website-widget",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Embeddable chat widget for website visitors",
+  "scripts": {
+    "build": "tsup src/index.ts --format iife --minify --global-name ConversationWidget",
+    "dev": "tsup src/index.ts --format iife --watch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

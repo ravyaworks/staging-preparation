@@ -3,11 +3,30 @@ import request from 'supertest';
 import type { AppConfig } from '@conversation-platform/config';
 import type { Logger } from '@conversation-platform/logger';
 
+class MockRepository {
+  constructor(_prisma: any) {}
+  create() { return Promise.resolve({}); }
+  findMany() { return Promise.resolve([]); }
+  findUnique() { return Promise.resolve(null); }
+  findFirst() { return Promise.resolve(null); }
+  update() { return Promise.resolve({}); }
+  delete() { return Promise.resolve({}); }
+}
+
 vi.mock('@conversation-platform/database', () => ({
   getPrismaClient: () => ({
     $queryRaw: vi.fn().mockResolvedValue([{ 1: 1 }]),
     $disconnect: vi.fn(),
   }),
+  PrismaClient: vi.fn(),
+  ChannelConnectionRepository: MockRepository,
+  IntegrationRepository: MockRepository,
+  IntegrationLogRepository: MockRepository,
+  IntegrationUsageRepository: MockRepository,
+  WebhookRepository: MockRepository,
+  ConversationRepository: MockRepository,
+  MessageRepository: MockRepository,
+  ApiKeyRepository: MockRepository,
 }));
 
 const mockLogger: Logger = {

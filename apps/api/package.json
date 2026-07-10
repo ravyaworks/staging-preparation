@@ -13,27 +13,29 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "express": "^4.18.0",
-    "@conversation-platform/config": "workspace:*",
-    "@conversation-platform/logger": "workspace:*",
-    "@conversation-platform/database": "workspace:*",
+    "@conversation-platform/analytics-engine": "workspace:*",
+    "@conversation-platform/audit": "workspace:*",
     "@conversation-platform/auth": "workspace:*",
+    "@conversation-platform/config": "workspace:*",
+    "@conversation-platform/database": "workspace:*",
     "@conversation-platform/knowledge-engine": "workspace:*",
-    "@conversation-platform/workflow-engine": "workspace:*",
+    "@conversation-platform/logger": "workspace:*",
+    "@conversation-platform/notification-engine": "workspace:*",
+    "@conversation-platform/plugin-framework": "workspace:*",
     "@conversation-platform/tool-engine": "workspace:*",
     "@conversation-platform/tools": "workspace:*",
-    "@conversation-platform/plugin-framework": "workspace:*",
-    "@conversation-platform/analytics-engine": "workspace:*",
-    "@conversation-platform/notification-engine": "workspace:*",
-    "@conversation-platform/audit": "workspace:*"
+    "@conversation-platform/workflow-engine": "workspace:*",
+    "express": "^4.18.0",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.0",
     "@types/express-serve-static-core": "^4.17.0",
     "@types/supertest": "^6.0.0",
+    "@types/ws": "^8.18.1",
     "supertest": "^7.0.0",
-    "tsx": "^4.7.0",
-    "tsup": "^8.0.0"
+    "tsup": "^8.0.0",
+    "tsx": "^4.7.0"
   },
   "engines": {
     "node": ">=20"

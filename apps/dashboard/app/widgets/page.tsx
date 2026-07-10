@@ -85,30 +85,9 @@ const fonts = [
 ]
 
 function generateEmbedCode(config: WidgetConfig) {
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
   return `<!-- Conversation Platform Widget -->
-<script>
-  (function(w,d,s,o,f,js,fjs){
-    w['CPWidget']=o;w[o]=w[o]||function(){(w[o].q=w[o].q||[]).push(arguments)};
-    js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];
-    js.id='cp-widget-sdk';js.src='https://cdn.conversation-platform.com/widget.js';
-    fjs.parentNode.insertBefore(js,fjs);
-  }(window,document,'script','cpw','${config.name.toLowerCase().replace(/\s+/g, '-')}'));
-  cpw('init', {
-    themeColor: '${config.themeColor}',
-    position: '${config.position}',
-    greeting: '${config.greetingMessage}',
-    launcherStyle: '${config.launcherStyle}',
-    primaryColor: '${config.primaryColor}',
-    font: '${config.font}',
-    cornerRadius: ${config.cornerRadius},
-    darkMode: ${config.darkMode},
-    showBrand: ${config.showBrand},
-    autoOpenDelay: ${config.autoOpenDelay},
-    offlineMessage: '${config.offlineMessage}',
-    csatSurvey: ${config.csatSurvey},
-    fileUpload: ${config.fileUpload}
-  });
-</script>`
+<script src="${baseUrl}/api/v1/widgets/${config.name.toLowerCase().replace(/\s+/g, '-')}/script"></script>`
 }
 
 function WidgetPreview({ config }: { config: WidgetConfig }) {

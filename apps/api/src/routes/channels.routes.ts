@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import { ChannelOrchestrator } from '@conversation-platform/channel-service';
 import type { ChannelConfig, ChannelAuthConfig, ChannelType } from '@conversation-platform/channel-core';
 import { getPrismaClient, ChannelConnectionRepository } from '@conversation-platform/database';
+import { webhookLimiter } from '../middleware/rate-limit';
 
 const router: import('express').Router = Router();
 const prisma = getPrismaClient();
@@ -100,7 +101,7 @@ router.post('/:type/typing', async (req: Request, res: Response) => {
   }
 });
 
-router.all('/:type/webhook', async (req: Request, res: Response) => {
+router.all('/:type/webhook', webhookLimiter, async (req: Request, res: Response) => {
   try {
     const type = req.params.type as ChannelType;
     const context = { requestId: req.headers['x-request-id'] as string || '', tenantId: tenantId(req) };

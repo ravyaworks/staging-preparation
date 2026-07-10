@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import { ChannelOrchestrator } from '@conversation-platform/channel-service';
 import type { ChannelType } from '@conversation-platform/channel-core';
 import { getPrismaClient, ChannelConnectionRepository } from '@conversation-platform/database';
+import { messageLimiter } from '../middleware/rate-limit';
 
 const router: import('express').Router = Router();
 const prisma = getPrismaClient();
@@ -12,7 +13,7 @@ function tenantId(req: Request): string {
   return (req as any).tenantId || 'default';
 }
 
-router.post('/send', async (req: Request, res: Response) => {
+router.post('/send', messageLimiter, async (req: Request, res: Response) => {
   try {
     const { channelType, message } = req.body as { channelType: ChannelType; message: any };
     const messageId = await orchestrator.sendMessage(tenantId(req), channelType, message);
@@ -23,7 +24,7 @@ router.post('/send', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/broadcast', async (req: Request, res: Response) => {
+router.post('/broadcast', messageLimiter, async (req: Request, res: Response) => {
   try {
     const { message, channelTypes } = req.body as { message: any; channelTypes: ChannelType[] };
     const results: Array<{ channelType: ChannelType; messageId: string; success: boolean; error?: string }> = [];
@@ -49,7 +50,7 @@ router.post('/broadcast', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/incoming', async (req: Request, res: Response) => {
+router.post('/incoming', messageLimiter, async (req: Request, res: Response) => {
   try {
     const { channelType, payload } = req.body as { channelType: ChannelType; payload: Record<string, unknown> };
     const context = { requestId: req.headers['x-request-id'] as string || '', tenantId: tenantId(req) };

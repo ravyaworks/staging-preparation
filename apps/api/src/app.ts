@@ -6,7 +6,10 @@ import type { Logger } from '@conversation-platform/logger';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { tenantResolve } from './middleware/tenant';
 import { requestLogger } from './middleware/logging';
-import { apiLimiter, authLimiter } from './middleware/rate-limit';
+import { requestId } from './middleware/request-id';
+import { metricsMiddleware } from './middleware/metrics';
+import { csrfProtection } from './middleware/csrf';
+import { apiLimiter, authLimiter, webhookLimiter, integrationLimiter, messageLimiter } from './middleware/rate-limit';
 import { healthRoutes } from './routes/health.routes';
 import { createAuthRoutes } from './routes/auth.routes';
 import { createTenantRoutes } from './routes/tenant.routes';
@@ -21,6 +24,8 @@ import { channelsRoutes } from './routes/channels.routes';
 import { webhooksRoutes } from './routes/webhooks.routes';
 import { integrationsRoutes } from './routes/integrations.routes';
 import { messagesRoutes } from './routes/messages.routes';
+import { eventsRoutes } from './routes/events.routes';
+import { widgetRoutes } from './routes/widget.routes';
 
 export function createApp(config: AppConfig, logger: Logger): express.Express {
   const app = express();
@@ -30,11 +35,14 @@ export function createApp(config: AppConfig, logger: Logger): express.Express {
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true }));
 
+  app.use(requestId);
+  app.use(metricsMiddleware);
   app.use('/api/v1', apiLimiter);
   app.use('/api/v1/auth', authLimiter);
 
   app.use(requestLogger(logger));
   app.use(tenantResolve(config));
+  app.use(csrfProtection);
 
   app.use('/api/v1/health', healthRoutes);
   app.use('/api/v1/auth', createAuthRoutes(config, logger));
@@ -51,6 +59,8 @@ export function createApp(config: AppConfig, logger: Logger): express.Express {
   app.use('/api/v1/webhooks', webhooksRoutes);
   app.use('/api/v1/integrations', integrationsRoutes);
   app.use('/api/v1/messages', messagesRoutes);
+  app.use('/api/v1/events', eventsRoutes);
+  app.use('/api/v1/widgets', widgetRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

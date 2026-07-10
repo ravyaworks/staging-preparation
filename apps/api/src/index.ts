@@ -1,11 +1,16 @@
+import http from 'http';
 import { loadConfig } from '@conversation-platform/config';
 import { createPrismaClient, disconnectPrisma } from '@conversation-platform/database';
 import { createPinoLogger } from './lib/logger';
 import { createApp } from './app';
+import { createWebSocketServer, broadcastToTenant, shutdown as wsShutdown } from './websocket/handler';
+import { setLogger, sendSSEEvent } from './routes/events.routes';
 
 async function main() {
   const config = loadConfig();
   const logger = createPinoLogger('api', { level: config.log.level, pretty: config.log.pretty });
+
+  setLogger(logger);
 
   try {
     const prisma = createPrismaClient();
@@ -18,12 +23,18 @@ async function main() {
 
   const app = createApp(config, logger);
 
-  const server = app.listen(config.port, config.host, () => {
+  const server = http.createServer(app);
+  const wss = createWebSocketServer(server, logger);
+  logger.info('WebSocket server initialized', { path: '/ws' });
+
+  server.listen(config.port, config.host, () => {
     logger.info(`API server listening on http://${config.host}:${config.port}`);
   });
 
   const shutdown = async (signal: string) => {
     logger.info(`${signal} received, shutting down...`);
+    wss.close();
+    wsShutdown();
     server.close(async () => {
       await disconnectPrisma();
       logger.info('Server shut down');
