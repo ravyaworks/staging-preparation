@@ -6,7 +6,7 @@ import { createAuthService } from '../services/auth.service';
 import { createAuthController } from '../controllers/auth.controller';
 
 export function createAuthRoutes(config: AppConfig, logger: Logger) {
-  const router = Router();
+  const router: import('express').Router = Router();
   const authService = createAuthService(config, logger);
   const controller = createAuthController(authService);
 

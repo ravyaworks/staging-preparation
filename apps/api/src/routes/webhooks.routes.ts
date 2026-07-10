@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import { WebhookRegistry, WebhookDispatcher, WebhookMonitor, generateSecret } from '@conversation-platform/webhook-service';
 import type { WebhookConfig, WebhookEvent } from '@conversation-platform/webhook-service';
 
-const router = Router();
+const router: import('express').Router = Router();
 const registry = new WebhookRegistry();
 const dispatcher = new WebhookDispatcher(registry);
 const monitor = new WebhookMonitor();

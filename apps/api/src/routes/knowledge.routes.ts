@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { KnowledgeEngine } from '@conversation-platform/knowledge-engine';
 
-const router = Router();
+const router: import('express').Router = Router();
 const engine = new KnowledgeEngine();
 
 function tenantId(req: Request): string {

@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { PluginFramework } from '@conversation-platform/plugin-framework';
 
-const router = Router();
+const router: import('express').Router = Router();
 const framework = new PluginFramework();
 
 router.get('/', (_req: Request, res: Response) => {

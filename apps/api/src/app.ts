@@ -22,7 +22,7 @@ import { webhooksRoutes } from './routes/webhooks.routes';
 import { integrationsRoutes } from './routes/integrations.routes';
 import { messagesRoutes } from './routes/messages.routes';
 
-export function createApp(config: AppConfig, logger: Logger) {
+export function createApp(config: AppConfig, logger: Logger): express.Express {
   const app = express();
 
   app.use(helmet());

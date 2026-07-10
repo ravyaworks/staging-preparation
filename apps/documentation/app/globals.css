@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --sidebar-bg: 222.2 47.4% 98%;
+    --sidebar-border: 221.3 50.4% 91.8%;
+    --sidebar-active: 221.3 50.4% 91.8%;
+    --code-bg: 220 14% 96%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --sidebar-bg: 222.2 84% 3%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-active: 217.2 32.6% 17.5%;
+    --code-bg: 217.2 32.6% 12%;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  pre {
+    @apply rounded-lg border bg-code-bg p-4 overflow-x-auto text-sm font-mono;
+  }
+}

@@ -4,7 +4,7 @@ import { authenticate } from '@conversation-platform/auth';
 import { createTenantController } from '../controllers/tenant.controller';
 
 export function createTenantRoutes(config: AppConfig) {
-  const router = Router();
+  const router: import('express').Router = Router();
   const controller = createTenantController();
 
   const jwtConfig = {

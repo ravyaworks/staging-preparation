@@ -3,7 +3,7 @@ import { IntegrationManager, ApiKeyManager, UsageTracker } from '@conversation-p
 import type { IntegrationConfig } from '@conversation-platform/integration-service';
 import type { ChannelType } from '@conversation-platform/channel-core';
 
-const router = Router();
+const router: import('express').Router = Router();
 const manager = new IntegrationManager();
 const apiKeyManager = new ApiKeyManager();
 const usageTracker = new UsageTracker();

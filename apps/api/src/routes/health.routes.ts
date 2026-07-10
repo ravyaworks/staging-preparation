@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { getPrismaClient } from '@conversation-platform/database';
 
-const router = Router();
+const router: Router = Router();
 
 router.get('/', async (_req: Request, res: Response) => {
   const checks: Record<string, { status: string; latency?: number }> = {};

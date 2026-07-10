@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { AuditSystem } from '@conversation-platform/audit';
 
-const router = Router();
+const router: import('express').Router = Router();
 const audit = new AuditSystem();
 
 function tenantId(req: Request): string {

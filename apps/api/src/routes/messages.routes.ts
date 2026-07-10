@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import { ChannelOrchestrator } from '@conversation-platform/channel-service';
 import type { ChannelType } from '@conversation-platform/channel-core';
 
-const router = Router();
+const router: import('express').Router = Router();
 const orchestrator = new ChannelOrchestrator();
 
 function tenantId(req: Request): string {

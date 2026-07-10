@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { WorkflowEngine } from '@conversation-platform/workflow-engine';
 
-const router = Router();
+const router: import('express').Router = Router();
 const engine = new WorkflowEngine();
 
 function tenantId(req: Request): string {

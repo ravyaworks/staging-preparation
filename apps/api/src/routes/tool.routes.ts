@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import { ToolRegistry, ToolExecutor } from '@conversation-platform/tool-engine';
 import { getAllDefaultToolDefs, createDefaultToolHandlerStub } from '@conversation-platform/tools';
 
-const router = Router();
+const router: import('express').Router = Router();
 const registry = new ToolRegistry();
 const executor = new ToolExecutor(registry);
 

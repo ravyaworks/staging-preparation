@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { AnalyticsEngine } from '@conversation-platform/analytics-engine';
 
-const router = Router();
+const router: import('express').Router = Router();
 const engine = new AnalyticsEngine();
 
 router.post('/track', (req: Request, res: Response) => {

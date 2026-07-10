@@ -231,6 +231,214 @@ importers:
         specifier: ^1.3.0
         version: 1.6.1(@types/node@20.19.43)(jsdom@24.1.3)
 
+  apps/documentation:
+    dependencies:
+      lucide-react:
+        specifier: ^0.400.0
+        version: 0.400.0(react@18.3.1)
+      next:
+        specifier: ^14.2.0
+        version: 14.2.35(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react:
+        specifier: ^18.3.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.43
+      '@types/react':
+        specifier: ^18.3.0
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.7(@types/react@18.3.31)
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  channels/api:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  channels/custom:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  channels/discord:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  channels/email:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  channels/instagram:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  channels/messenger:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  channels/slack:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  channels/sms:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  channels/teams:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  channels/telegram:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  channels/website:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  channels/whatsapp:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
   packages/ai-engine:
     dependencies:
       '@conversation-platform/logger':
@@ -303,6 +511,21 @@ importers:
       '@types/uuid':
         specifier: ^11.0.0
         version: 11.0.0
+
+  packages/channel-core:
+    dependencies:
+      '@conversation-platform/event-bus':
+        specifier: workspace:*
+        version: link:../event-bus
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../types
 
   packages/config: {}
 
@@ -417,6 +640,21 @@ importers:
         specifier: workspace:*
         version: link:../types
 
+  packages/plugin-engine:
+    dependencies:
+      '@conversation-platform/event-bus':
+        specifier: workspace:*
+        version: link:../event-bus
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@conversation-platform/plugin-framework':
+        specifier: workspace:*
+        version: link:../plugin-framework
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../types
+
   packages/plugin-framework:
     dependencies:
       '@conversation-platform/config':
@@ -464,6 +702,12 @@ importers:
       '@conversation-platform/vector-search':
         specifier: workspace:*
         version: link:../vector-search
+
+  packages/sdk:
+    dependencies:
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../types
 
   packages/shared: {}
 
@@ -622,6 +866,98 @@ importers:
       '@conversation-platform/database':
         specifier: workspace:*
         version: link:../../packages/database
+
+  sdk/javascript:
+    dependencies:
+      '@conversation-platform/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+
+  sdk/nextjs:
+    dependencies:
+      '@conversation-platform/sdk-react':
+        specifier: workspace:*
+        version: link:../react
+      next:
+        specifier: ^14.0.0
+        version: 14.2.35(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react:
+        specifier: ^18.0.0
+        version: 18.3.1
+    devDependencies:
+      '@types/react':
+        specifier: ^18.0.0
+        version: 18.3.31
+
+  sdk/node:
+    dependencies:
+      '@conversation-platform/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+
+  sdk/react:
+    dependencies:
+      '@conversation-platform/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      react:
+        specifier: ^18.0.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.0.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.0.0
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ^18.0.0
+        version: 18.3.7(@types/react@18.3.31)
+
+  services/channel-service:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  services/integration-service:
+    dependencies:
+      '@conversation-platform/channel-core':
+        specifier: workspace:*
+        version: link:../../packages/channel-core
+      '@conversation-platform/event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  services/webhook-service:
+    dependencies:
+      '@conversation-platform/event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@conversation-platform/types':
+        specifier: workspace:*
+        version: link:../../packages/types
 
 packages:
 
@@ -3036,6 +3372,11 @@ packages:
     resolution: {integrity: sha512-MDInjLrmZToccH2UxEshntujBlFwtOofGB22FN/eg39FfGVYV1TT1eMIv2j4rdaTJBpYjUuX7fEo9pwYkNFgwA==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0
+
+  lucide-react@0.400.0:
+    resolution: {integrity: sha512-rpp7pFHh3Xd93KHixNgB0SqThMHpYNzsGUu69UaQbSZ75Q/J3m5t6EhKyMT3m4w2WOxmJ2mY0tD3vebnXqQryQ==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
@@ -6705,6 +7046,10 @@ snapshots:
   lru-cache@10.4.3: {}
 
   lucide-react@0.356.0(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+
+  lucide-react@0.400.0(react@18.3.1):
     dependencies:
       react: 18.3.1
 

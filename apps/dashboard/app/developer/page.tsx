@@ -22,7 +22,6 @@ import {
   Terminal,
   Download,
   Globe,
-  Smartphone,
 } from 'lucide-react'
 
 interface ApiKey {
@@ -61,11 +60,38 @@ const endpoints: Endpoint[] = [
   { method: 'POST', path: '/api/v1/widgets', description: 'Create a widget config', category: 'Widgets' },
   { method: 'PUT', path: '/api/v1/widgets/:id', description: 'Update widget config', category: 'Widgets' },
   { method: 'GET', path: '/api/v1/analytics', description: 'Fetch analytics data', category: 'Analytics' },
+  { method: 'GET', path: '/api/v1/channels', description: 'List all channels', category: 'Channels' },
+  { method: 'GET', path: '/api/v1/channels/:type', description: 'Get channel details', category: 'Channels' },
+  { method: 'POST', path: '/api/v1/channels/:type/connect', description: 'Connect a channel', category: 'Channels' },
+  { method: 'POST', path: '/api/v1/channels/:type/disconnect', description: 'Disconnect a channel', category: 'Channels' },
+  { method: 'POST', path: '/api/v1/channels/:type/reconnect', description: 'Reconnect a channel', category: 'Channels' },
+  { method: 'PATCH', path: '/api/v1/channels/:type/config', description: 'Update channel configuration', category: 'Channels' },
+  { method: 'POST', path: '/api/v1/channels/:type/messages', description: 'List channel messages', category: 'Channels' },
+  { method: 'POST', path: '/api/v1/channels/:type/webhook', description: 'Handle channel webhook', category: 'Channels' },
+  { method: 'POST', path: '/api/v1/messages/send', description: 'Send a message', category: 'Messages' },
+  { method: 'POST', path: '/api/v1/messages/broadcast', description: 'Broadcast a message', category: 'Messages' },
+  { method: 'POST', path: '/api/v1/messages/incoming', description: 'Process incoming message', category: 'Messages' },
+  { method: 'GET', path: '/api/v1/integrations', description: 'List all integrations', category: 'Integrations' },
+  { method: 'POST', path: '/api/v1/integrations', description: 'Create an integration', category: 'Integrations' },
+  { method: 'GET', path: '/api/v1/integrations/:id', description: 'Get integration details', category: 'Integrations' },
+  { method: 'PATCH', path: '/api/v1/integrations/:id', description: 'Update an integration', category: 'Integrations' },
+  { method: 'DELETE', path: '/api/v1/integrations/:id', description: 'Delete an integration', category: 'Integrations' },
+  { method: 'POST', path: '/api/v1/integrations/api-keys', description: 'Create an API key', category: 'Integrations' },
+  { method: 'GET', path: '/api/v1/integrations/api-keys', description: 'List API keys', category: 'Integrations' },
+  { method: 'POST', path: '/api/v1/integrations/api-keys/:id/revoke', description: 'Revoke an API key', category: 'Integrations' },
+  { method: 'GET', path: '/api/v1/webhooks', description: 'List all webhooks', category: 'Webhooks' },
   { method: 'POST', path: '/api/v1/webhooks', description: 'Register a webhook', category: 'Webhooks' },
-  { method: 'GET', path: '/api/v1/webhooks/:id/logs', description: 'View webhook delivery logs', category: 'Webhooks' },
+  { method: 'GET', path: '/api/v1/webhooks/:id', description: 'Get webhook details', category: 'Webhooks' },
+  { method: 'PATCH', path: '/api/v1/webhooks/:id', description: 'Update a webhook', category: 'Webhooks' },
+  { method: 'DELETE', path: '/api/v1/webhooks/:id', description: 'Delete a webhook', category: 'Webhooks' },
+  { method: 'POST', path: '/api/v1/webhooks/:id/regenerate-secret', description: 'Regenerate webhook secret', category: 'Webhooks' },
+  { method: 'GET', path: '/api/v1/webhooks/:id/deliveries', description: 'List webhook deliveries', category: 'Webhooks' },
+  { method: 'POST', path: '/api/v1/webhooks/test', description: 'Test a webhook', category: 'Webhooks' },
+  { method: 'GET', path: '/api/v1/webhooks/stats', description: 'Get webhook statistics', category: 'Webhooks' },
+  { method: 'GET', path: '/api/v1/webhooks/failures', description: 'List webhook failures', category: 'Webhooks' },
 ]
 
-const categories = ['Conversations', 'Knowledge', 'Workflows', 'Widgets', 'Analytics', 'Webhooks']
+const categories = ['Conversations', 'Knowledge', 'Workflows', 'Widgets', 'Analytics', 'Channels', 'Messages', 'Integrations', 'Webhooks']
 
 const codeExamples: Record<string, Record<string, string>> = {
   'List Conversations': {
@@ -129,13 +155,142 @@ response = requests.post(
 )
 data = response.json()`,
   },
+  'Connect WhatsApp': {
+    curl: `curl -X POST "https://api.conversation-platform.com/api/v1/channels/whatsapp/connect" \\
+  -H "Authorization: Bearer cp_live_7xK3mR9qW2pL5vN8bJ4hF1cD6sA0" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "config": {
+      "phoneNumberId": "1234567890",
+      "accessToken": "your-access-token",
+      "verifyToken": "your-verify-token"
+    }
+  }'`,
+    javascript: `const response = await fetch('https://api.conversation-platform.com/api/v1/channels/whatsapp/connect', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer cp_live_7xK3mR9qW2pL5vN8bJ4hF1cD6sA0',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    config: {
+      phoneNumberId: '1234567890',
+      accessToken: 'your-access-token',
+      verifyToken: 'your-verify-token'
+    }
+  })
+});
+const data = await response.json();`,
+    python: `import requests
+
+response = requests.post(
+    'https://api.conversation-platform.com/api/v1/channels/whatsapp/connect',
+    headers={
+        'Authorization': 'Bearer cp_live_7xK3mR9qW2pL5vN8bJ4hF1cD6sA0',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'config': {
+            'phoneNumberId': '1234567890',
+            'accessToken': 'your-access-token',
+            'verifyToken': 'your-verify-token'
+        }
+    }
+)
+data = response.json()`,
+  },
+  'Send Message': {
+    curl: `curl -X POST "https://api.conversation-platform.com/api/v1/messages/send" \\
+  -H "Authorization: Bearer cp_live_7xK3mR9qW2pL5vN8bJ4hF1cD6sA0" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "channel": "whatsapp",
+    "to": "+1234567890",
+    "type": "text",
+    "content": {
+      "text": "Hello from the platform!"
+    }
+  }'`,
+    javascript: `const response = await fetch('https://api.conversation-platform.com/api/v1/messages/send', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer cp_live_7xK3mR9qW2pL5vN8bJ4hF1cD6sA0',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    channel: 'whatsapp',
+    to: '+1234567890',
+    type: 'text',
+    content: {
+      text: 'Hello from the platform!'
+    }
+  })
+});
+const data = await response.json();`,
+    python: `import requests
+
+response = requests.post(
+    'https://api.conversation-platform.com/api/v1/messages/send',
+    headers={
+        'Authorization': 'Bearer cp_live_7xK3mR9qW2pL5vN8bJ4hF1cD6sA0',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'channel': 'whatsapp',
+        'to': '+1234567890',
+        'type': 'text',
+        'content': {
+            'text': 'Hello from the platform!'
+        }
+    }
+)
+data = response.json()`,
+  },
+  'Register Webhook': {
+    curl: `curl -X POST "https://api.conversation-platform.com/api/v1/webhooks" \\
+  -H "Authorization: Bearer cp_live_7xK3mR9qW2pL5vN8bJ4hF1cD6sA0" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "url": "https://your-app.com/webhooks",
+    "events": ["message.received", "channel.connected"],
+    "description": "Production webhook"
+  }'`,
+    javascript: `const response = await fetch('https://api.conversation-platform.com/api/v1/webhooks', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer cp_live_7xK3mR9qW2pL5vN8bJ4hF1cD6sA0',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    url: 'https://your-app.com/webhooks',
+    events: ['message.received', 'channel.connected'],
+    description: 'Production webhook'
+  })
+});
+const data = await response.json();`,
+    python: `import requests
+
+response = requests.post(
+    'https://api.conversation-platform.com/api/v1/webhooks',
+    headers={
+        'Authorization': 'Bearer cp_live_7xK3mR9qW2pL5vN8bJ4hF1cD6sA0',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'url': 'https://your-app.com/webhooks',
+        'events': ['message.received', 'channel.connected'],
+        'description': 'Production webhook'
+    }
+)
+data = response.json()`,
+  },
 }
 
 const sdkLinks = [
-  { name: 'JavaScript SDK', icon: <Globe className="h-5 w-5" />, description: 'Browser and Node.js', version: 'v2.1.0' },
-  { name: 'Python SDK', icon: <Terminal className="h-5 w-5" />, description: 'Python 3.8+', version: 'v1.8.3' },
-  { name: 'React SDK', icon: <Code className="h-5 w-5" />, description: 'React 18+', version: 'v1.4.0' },
-  { name: 'Mobile SDK', icon: <Smartphone className="h-5 w-5" />, description: 'iOS & Android', version: 'v1.2.0' },
+  { name: 'SDK Core', icon: <Globe className="h-5 w-5" />, description: '@conversation-platform/sdk', version: 'v0.1.0' },
+  { name: 'React SDK', icon: <Code className="h-5 w-5" />, description: '@conversation-platform/sdk-react', version: 'v0.1.0' },
+  { name: 'Next.js SDK', icon: <Code className="h-5 w-5" />, description: '@conversation-platform/sdk-nextjs', version: 'v0.1.0' },
+  { name: 'Node.js SDK', icon: <Terminal className="h-5 w-5" />, description: '@conversation-platform/sdk-node', version: 'v0.1.0' },
 ]
 
 const methodColors: Record<string, string> = {

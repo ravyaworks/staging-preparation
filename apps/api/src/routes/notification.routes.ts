@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { NotificationEngine, createStubChannelProvider } from '@conversation-platform/notification-engine';
 
-const router = Router();
+const router: import('express').Router = Router();
 const engine = new NotificationEngine();
 
 engine.registerChannel('email', createStubChannelProvider(true));

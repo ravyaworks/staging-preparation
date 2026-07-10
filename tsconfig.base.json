@@ -125,5 +125,5 @@
       "@conversation-platform/audit/*": ["./packages/audit/src/*"]
     }
   },
-  "exclude": ["node_modules", "dist", ".next", "out", "coverage"]
+  "exclude": ["node_modules", "dist", ".next", "out", "coverage", "apps/dashboard", "apps/documentation", "packages/ui", "playwright.config.ts"]
 }
