@@ -10,9 +10,12 @@ import { requestLogger } from './middleware/logging';
 import { requestId } from './middleware/request-id';
 import { metricsMiddleware } from './middleware/metrics';
 import { csrfProtection } from './middleware/csrf';
-import { apiLimiter, authLimiter, webhookLimiter, integrationLimiter, messageLimiter } from './middleware/rate-limit';
+import { apiLimiter, authLimiter } from './middleware/rate-limit';
+import swaggerUi from 'swagger-ui-express';
+import { spec } from './routes/docs.routes';
 
 import { healthRoutes } from './routes/health.routes';
+import { docsRoutes } from './routes/docs.routes';
 import { createAuthRoutes } from './routes/auth.routes';
 import { createTenantRoutes } from './routes/tenant.routes';
 import { knowledgeRoutes } from './routes/knowledge.routes';
@@ -48,6 +51,12 @@ export function createApp(config: AppConfig, logger: Logger): express.Express {
   app.use(csrfProtection);
 
   app.use('/api/v1/health', healthRoutes);
+
+  if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true') {
+    app.use('/api/v1/docs', docsRoutes);
+    app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(spec, { customSiteTitle: 'Conversation Platform API Docs' }));
+  }
+
   app.use('/api/v1/auth', createAuthRoutes(config, logger));
   app.use('/api/v1/tenants', createTenantRoutes(config));
 

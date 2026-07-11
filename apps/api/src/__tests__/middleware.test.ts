@@ -13,7 +13,7 @@ describe('api-key auth middleware', () => {
 
     const req = { headers: { authorization: 'Bearer sk-test-key-123' } } as unknown as Request
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() } as unknown as Response
-    const next = vi.fn() as NextFunction
+    const next = vi.fn() as unknown as NextFunction
 
     apiKeyAuth(req, res, next)
 
@@ -27,7 +27,7 @@ describe('api-key auth middleware', () => {
 
     const req = { headers: {} } as unknown as Request
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() } as unknown as Response
-    const next = vi.fn() as NextFunction
+    const next = vi.fn() as unknown as NextFunction
 
     apiKeyAuth(req, res, next)
 
@@ -40,7 +40,7 @@ describe('api-key auth middleware', () => {
 
     const req = { headers: { authorization: 'Basic dGVzdDp0ZXN0' } } as unknown as Request
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() } as unknown as Response
-    const next = vi.fn() as NextFunction
+    const next = vi.fn() as unknown as NextFunction
 
     apiKeyAuth(req, res, next)
 
@@ -52,7 +52,7 @@ describe('api-key auth middleware', () => {
 
     const req = { headers: { authorization: 'Bearer invalid-key' } } as unknown as Request
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() } as unknown as Response
-    const next = vi.fn() as NextFunction
+    const next = vi.fn() as unknown as NextFunction
 
     apiKeyAuth(req, res, next)
 
@@ -65,7 +65,7 @@ describe('api-key auth middleware', () => {
     const req = { headers: {} } as unknown as Request
     ;(req as any).apiKeyScopes = ['messages:read']
     const res = {} as unknown as Response
-    const next = vi.fn() as NextFunction
+    const next = vi.fn() as unknown as NextFunction
 
     requireScope('messages:read')(req, res, next)
     expect(next).toHaveBeenCalled()
@@ -77,7 +77,7 @@ describe('api-key auth middleware', () => {
     const req = { headers: {} } as unknown as Request
     ;(req as any).apiKeyScopes = ['*']
     const res = {} as unknown as Response
-    const next = vi.fn() as NextFunction
+    const next = vi.fn() as unknown as NextFunction
 
     requireScope('messages:read')(req, res, next)
     expect(next).toHaveBeenCalled()
@@ -89,7 +89,7 @@ describe('api-key auth middleware', () => {
     const req = { headers: {} } as unknown as Request
     ;(req as any).apiKeyScopes = ['conversations:read']
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() } as unknown as Response
-    const next = vi.fn() as NextFunction
+    const next = vi.fn() as unknown as NextFunction
 
     requireScope('messages:write')(req, res, next)
     expect(res.status).toHaveBeenCalledWith(403)
@@ -123,7 +123,7 @@ describe('etag middleware', () => {
   it('skips non-GET requests', async () => {
     const { etagMiddleware } = await import('../middleware/etag')
     const req = { method: 'POST' } as unknown as Request
-    const next = vi.fn() as NextFunction
+    const next = vi.fn() as unknown as NextFunction
     etagMiddleware(req, {} as Response, next)
     expect(next).toHaveBeenCalled()
   })
@@ -140,7 +140,7 @@ describe('etag middleware', () => {
       write: vi.fn() as any,
     } as unknown as Response
 
-    etagMiddleware(req, res, vi.fn() as NextFunction)
+    etagMiddleware(req, res, vi.fn() as unknown as NextFunction)
     // After passing through middleware, res.write and res.end should be wrapped
     expect(typeof res.write).toBe('function')
   })

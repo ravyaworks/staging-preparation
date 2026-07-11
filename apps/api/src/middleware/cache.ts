@@ -11,7 +11,7 @@ export function withCache<T>(
   factory: () => Promise<T>,
   ttlMs?: number,
 ): Promise<T> {
-  return appCache.getOrSet(key, factory, { ttlMs })
+  return appCache.getOrSet(key, factory, { ttlMs }) as Promise<T>
 }
 
 export async function invalidateCache(pattern?: string): Promise<void> {
