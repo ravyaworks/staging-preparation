@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import type { AppConfig } from '@conversation-platform/config';
 import type { Logger } from '@conversation-platform/logger';
 import { errorHandler, notFoundHandler } from './middleware/error';
@@ -10,6 +11,7 @@ import { requestId } from './middleware/request-id';
 import { metricsMiddleware } from './middleware/metrics';
 import { csrfProtection } from './middleware/csrf';
 import { apiLimiter, authLimiter, webhookLimiter, integrationLimiter, messageLimiter } from './middleware/rate-limit';
+
 import { healthRoutes } from './routes/health.routes';
 import { createAuthRoutes } from './routes/auth.routes';
 import { createTenantRoutes } from './routes/tenant.routes';
@@ -30,6 +32,7 @@ import { widgetRoutes } from './routes/widget.routes';
 export function createApp(config: AppConfig, logger: Logger): express.Express {
   const app = express();
 
+  app.use(compression());
   app.use(helmet());
   app.use(cors({ origin: config.cors.origins, methods: config.cors.methods }));
   app.use(express.json({ limit: '1mb' }));

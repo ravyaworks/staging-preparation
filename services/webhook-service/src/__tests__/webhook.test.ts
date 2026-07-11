@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { WebhookRegistry } from '../registry'
 import { WebhookDispatcher } from '../dispatcher'
 import { WebhookMonitor } from '../monitor'
@@ -105,6 +105,13 @@ describe('WebhookSecurity', () => {
     const payload = '{"key":"value"}'
     const secret = 'my-secret'
     const pastTimestamp = Math.floor(Date.now() / 1000) - 600
+    const header = `t=${pastTimestamp},v1=${Array(64).fill('0').join('')}`
+    expect(verifySignature(payload, header, secret)).toBe(false)
+  })
+
+  it('accepts current timestamp', () => {
+    const payload = '{"key":"value"}'
+    const secret = 'my-secret'
     const signature = createSignatureHeader(payload, secret)
     expect(verifySignature(payload, signature, secret)).toBe(true)
   })
@@ -113,10 +120,21 @@ describe('WebhookSecurity', () => {
 describe('WebhookDispatcher', () => {
   let registry: WebhookRegistry
   let dispatcher: WebhookDispatcher
+  let fetchMock: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     registry = new WebhookRegistry()
     dispatcher = new WebhookDispatcher(registry)
+    fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve('OK'),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('returns empty when no matching webhooks', async () => {
@@ -125,10 +143,20 @@ describe('WebhookDispatcher', () => {
   })
 
   it('attempts delivery to registered webhooks', async () => {
-    const config = createConfig({ url: 'https://httpbin.org/post' })
+    const config = createConfig({ url: 'https://example.com/webhook' })
     registry.register(config)
     const results = await dispatcher.dispatch(createEvent())
     expect(results.length).toBeGreaterThan(0)
+    expect(fetchMock).toHaveBeenCalled()
+  })
+
+  it('records failure on network error', async () => {
+    fetchMock.mockRejectedValue(new Error('Network error'))
+    const config = createConfig({ url: 'https://example.com/webhook' })
+    registry.register(config)
+    const results = await dispatcher.dispatch(createEvent())
+    expect(results.length).toBeGreaterThan(0)
+    expect(results[0]?.status).toBe('failed')
   })
 })
 
