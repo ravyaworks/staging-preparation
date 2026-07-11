@@ -321,5 +321,57 @@ describe('ConversationClient', () => {
         }
       }
     });
+
+    it('should throw SDKError with default message when no error details', async () => {
+      const client = createClient();
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ success: false }),
+      });
+
+      await expect(client.list()).rejects.toThrow('Request failed with status 500');
+    });
+  });
+
+  describe('request options', () => {
+    it('should send JSON body as string', async () => {
+      const client = createClient();
+      mockFetch.mockResolvedValue(mockResponse({ id: 'msg-1' }));
+
+      await client.sendMessage('conv-1', 'Hello');
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          body: JSON.stringify({ content: 'Hello' }),
+        }),
+      );
+    });
+
+    it('should handle AbortSignal', async () => {
+      const client = createClient();
+      const controller = new AbortController();
+      mockFetch.mockResolvedValue(mockResponse([]));
+
+      await client.listChannels({ signal: controller.signal });
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+  });
+
+  describe('messages params', () => {
+    it('should pass ListMessagesParams as query string', async () => {
+      const client = createClient();
+      mockFetch.mockResolvedValue(mockResponse({ data: [], total: 0, page: 1, limit: 50, totalPages: 0, hasNext: false, hasPrevious: false }));
+
+      await client.listMessages('conv-1', { page: 2, limit: 25, before: 'msg-10', after: 'msg-5' });
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain('page=2');
+      expect(url).toContain('limit=25');
+      expect(url).toContain('before=msg-10');
+      expect(url).toContain('after=msg-5');
+    });
   });
 });
