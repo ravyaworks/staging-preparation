@@ -82,7 +82,7 @@ export function Sidebar() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   const isActive = (href: string) => {
-    if (href === '/') return pathname === '/';
+    if (href === '/') { return pathname === '/'; }
     return pathname.startsWith(href);
   };
 
