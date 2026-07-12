@@ -731,6 +731,7 @@ function BrandingTab() {
             <div className="flex items-center gap-4">
               <div className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30">
                 {branding.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={branding.logo} alt="Logo" className="h-16 w-16 object-contain" />
                 ) : (
                   <Upload className="h-6 w-6 text-muted-foreground" />
