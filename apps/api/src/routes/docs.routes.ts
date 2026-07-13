@@ -1050,8 +1050,198 @@ const spec = {
         tags: ['WhatsApp'],
         summary: 'Validate a phone number',
         security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['phone'], properties: { phone: { type: 'string' } } } } } },
+        parameters: [{ name: 'phone', in: 'query', required: true, schema: { type: 'string' } }],
         responses: { '200': { description: 'Validation result' } },
+      },
+    },
+
+    // ========== Inbox ==========
+
+    '/inbox/webhook/{channel}': {
+      post: {
+        tags: ['Inbox'],
+        summary: 'Process an incoming webhook message from a channel',
+        parameters: [
+          { name: 'channel', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'x-tenant-id', in: 'header', required: true, schema: { type: 'string' } },
+        ],
+        responses: { '200': { description: 'Message processed' }, '422': { description: 'Processing failed' } },
+      },
+    },
+    '/inbox/contacts': {
+      get: {
+        tags: ['Inbox'],
+        summary: 'List contacts',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'search', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: { '200': { description: 'Contact list' } },
+      },
+    },
+    '/inbox/contacts/{id}': {
+      get: {
+        tags: ['Inbox'],
+        summary: 'Get contact by ID',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Contact details' }, '404': { description: 'Not found' } },
+      },
+      patch: {
+        tags: ['Inbox'],
+        summary: 'Update contact',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Contact updated' } },
+      },
+    },
+    '/inbox/contacts/{id}/block': {
+      post: {
+        tags: ['Inbox'],
+        summary: 'Block a contact',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Contact blocked' } },
+      },
+    },
+    '/inbox/contacts/{id}/unblock': {
+      post: {
+        tags: ['Inbox'],
+        summary: 'Unblock a contact',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Contact unblocked' } },
+      },
+    },
+    '/inbox/conversations': {
+      get: {
+        tags: ['Inbox'],
+        summary: 'List conversations',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'status', in: 'query', schema: { type: 'string' } },
+          { name: 'channel', in: 'query', schema: { type: 'string' } },
+          { name: 'priority', in: 'query', schema: { type: 'string' } },
+          { name: 'search', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: { '200': { description: 'Conversation list' } },
+      },
+    },
+    '/inbox/conversations/{id}': {
+      get: {
+        tags: ['Inbox'],
+        summary: 'Get conversation details with messages',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Conversation details' }, '404': { description: 'Not found' } },
+      },
+    },
+    '/inbox/conversations/{id}/status': {
+      patch: {
+        tags: ['Inbox'],
+        summary: 'Update conversation status',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['status'], properties: { status: { type: 'string' } } } } } },
+        responses: { '200': { description: 'Status updated' } },
+      },
+    },
+    '/inbox/conversations/{id}/priority': {
+      patch: {
+        tags: ['Inbox'],
+        summary: 'Update conversation priority',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['priority'], properties: { priority: { type: 'string' } } } } } },
+        responses: { '200': { description: 'Priority updated' } },
+      },
+    },
+    '/inbox/conversations/{id}/close': {
+      post: {
+        tags: ['Inbox'],
+        summary: 'Close a conversation',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Conversation closed' } },
+      },
+    },
+    '/inbox/conversations/{id}/reopen': {
+      post: {
+        tags: ['Inbox'],
+        summary: 'Reopen a conversation',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Conversation reopened' } },
+      },
+    },
+    '/inbox/conversations/{id}/messages': {
+      get: {
+        tags: ['Inbox'],
+        summary: 'Get messages for a conversation',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 50 } },
+        ],
+        responses: { '200': { description: 'Message list' } },
+      },
+    },
+    '/inbox/conversations/{id}/assign': {
+      post: {
+        tags: ['Inbox'],
+        summary: 'Assign conversation to an agent',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['assignedToId', 'assignedByName'], properties: { assignedToId: { type: 'string' }, assignedByName: { type: 'string' }, reason: { type: 'string' } } } } } },
+        responses: { '200': { description: 'Conversation assigned' } },
+      },
+    },
+    '/inbox/conversations/{id}/release': {
+      post: {
+        tags: ['Inbox'],
+        summary: 'Release conversation from human handoff',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Conversation released' } },
+      },
+    },
+    '/inbox/conversations/{id}/notes': {
+      get: {
+        tags: ['Inbox'],
+        summary: 'Get conversation notes',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Notes list' } },
+      },
+      post: {
+        tags: ['Inbox'],
+        summary: 'Add a note to a conversation',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['content'], properties: { content: { type: 'string' } } } } } },
+        responses: { '201': { description: 'Note created' } },
+      },
+    },
+    '/inbox/adapters': {
+      get: {
+        tags: ['Inbox'],
+        summary: 'List registered channel adapters',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Adapter list' } },
+      },
+    },
+    '/inbox/adapters/{channel}/register': {
+      post: {
+        tags: ['Inbox'],
+        summary: 'Register a channel adapter',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'channel', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '201': { description: 'Adapter registered' }, '409': { description: 'Already registered' } },
       },
     },
   },

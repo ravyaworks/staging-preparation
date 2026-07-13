@@ -32,7 +32,9 @@ model Tenant {
   outreachJobs OutreachJob[]
   channelConnections ChannelConnection[]
   integrations  Integration[]
+  contacts      Contact[]
   conversations Conversation[]
+  outreachApiKeys OutreachApiKey[]
 
   @@map("tenants")
 }
@@ -66,6 +68,7 @@ model User {
   files      File[]
   notifications Notification[]
   conversations Conversation[]
+  assignedConversations Conversation[] @relation("assignedConversations")
   campaigns Campaign[]
   campaignLogs CampaignLog[]
 
@@ -86,8 +89,10 @@ model Organization {
   tenantId String @db.Uuid
   tenant   Tenant @relation(fields: [tenantId], references: [id])
 
-  users     User[]
-  campaigns Campaign[]
+  users           User[]
+  campaigns       Campaign[]
+  outreachApiKeys OutreachApiKey[]
+  importJobs      ImportJob[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -384,11 +389,49 @@ model IntegrationUsage {
   @@map("integration_usages")
 }
 
+model Contact {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String?  @db.VarChar(255)
+  phone     String?  @db.VarChar(50)
+  email     String?  @db.VarChar(255)
+  avatarUrl String?  @db.VarChar(512)
+  channels  Json?    @default("[]")
+  tags      String[]
+  customFields Json? @default("{}")
+  notes     String?  @db.Text
+  campaignSource String? @db.VarChar(100)
+  conversationCount Int   @default(0)
+  lastActivityAt  DateTime?
+  metadata  Json?   @default("{}")
+  isBlocked Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  tenantId String @db.Uuid
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  conversations Conversation[]
+
+  @@index([tenantId])
+  @@index([phone])
+  @@index([email])
+  @@map("contacts")
+}
+
 model Conversation {
   id        String            @id @default(uuid()) @db.Uuid
   title     String?           @db.VarChar(255)
   status    String            @default("active") @db.VarChar(20)
   channel   String?           @db.VarChar(50)
+  priority  String            @default("normal") @db.VarChar(20)
+  labels    String[]
+  lastMessageAt  DateTime?
+  lastMessagePreview String?  @db.VarChar(500)
+  messageCount    Int         @default(0)
+  isAiEnabled     Boolean     @default(true)
+  isHumanHandoff  Boolean     @default(false)
+  slaDeadline     DateTime?
   metadata  Json?             @default("{}")
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
@@ -399,11 +442,21 @@ model Conversation {
   userId   String? @db.Uuid
   user     User?   @relation(fields: [userId], references: [id])
 
+  contactId String? @db.Uuid
+  contact   Contact? @relation(fields: [contactId], references: [id])
+
+  assignedToId String? @db.Uuid
+  assignedTo   User?   @relation("assignedConversations", fields: [assignedToId], references: [id])
+
   messages Message[]
 
   @@index([tenantId])
   @@index([userId])
+  @@index([assignedToId])
+  @@index([contactId])
   @@index([status])
+  @@index([priority])
+  @@index([channel])
   @@map("conversations")
 }
 
@@ -411,17 +464,25 @@ model Message {
   id        String   @id @default(uuid()) @db.Uuid
   role      String   @db.VarChar(20)
   content   String   @db.Text
+  direction String   @default("inbound") @db.VarChar(20)
+  messageType String @default("text") @db.VarChar(50)
+  status    String   @default("sent") @db.VarChar(20)
   provider  String?  @db.VarChar(50)
   model     String?  @db.VarChar(100)
-  tokenCount Int?    
-  latency   Int?     
+  tokenCount Int?
+  latency   Int?
+  attachments Json?  @default("[]")
   metadata  Json?    @default("{}")
   createdAt DateTime @default(now())
 
   conversationId String     @db.Uuid
   conversation   Conversation @relation(fields: [conversationId], references: [id])
 
+  contactId String? @db.Uuid
+
   @@index([conversationId])
+  @@index([contactId])
+  @@index([direction])
   @@index([createdAt])
   @@map("messages")
 }
@@ -484,6 +545,7 @@ model Campaign {
   logs         CampaignLog[]
   tags         CampaignTag[]
   outreachJobs OutreachJob[]
+  importJobs   ImportJob[]
 
   @@index([organizationId])
   @@index([status])
@@ -505,13 +567,19 @@ model CampaignBusiness {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
-  campaignId     String  @db.Uuid
-  campaign       Campaign @relation(fields: [campaignId], references: [id])
-  outreachJobId  String? @db.Uuid
+  campaignId      String       @db.Uuid
+  campaign        Campaign     @relation(fields: [campaignId], references: [id])
+  outreachJobId   String? @db.Uuid
+  contactId       String? @db.Uuid
+  conversationId  String? @db.Uuid
+
+  importRecords ImportRecord[]
 
   @@unique([campaignId, phone])
   @@index([campaignId])
   @@index([status])
+  @@index([contactId])
+  @@index([conversationId])
   @@map("campaign_businesses")
 }
 
@@ -645,4 +713,82 @@ model DeliveryNotification {
   @@index([acknowledged])
   @@index([createdAt])
   @@map("delivery_notifications")
+}
+
+model OutreachApiKey {
+  id             String    @id @default(uuid()) @db.Uuid
+  name           String    @db.VarChar(255)
+  key            String    @db.VarChar(255)
+  keyPrefix      String    @db.VarChar(20)
+  organizationId String    @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  tenantId       String?   @db.Uuid
+  tenant         Tenant?   @relation(fields: [tenantId], references: [id])
+  createdBy      String?   @db.Uuid
+  isActive       Boolean   @default(true)
+  allowedIps     Json?     @default("[]")
+  rateLimitPerMinute Int   @default(60)
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([key])
+  @@index([organizationId])
+  @@index([keyPrefix])
+  @@index([isActive])
+  @@map("outreach_api_keys")
+}
+
+model ImportJob {
+  id             String    @id @default(uuid()) @db.Uuid
+  type           String    @default("json") @db.VarChar(20)
+  status         String    @default("pending") @db.VarChar(20)
+  totalRecords   Int       @default(0)
+  successCount   Int       @default(0)
+  failedCount    Int       @default(0)
+  errorSummary   Json?     @default("[]")
+  createdBy      String?   @db.Uuid
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  completedAt    DateTime?
+
+  organizationId String  @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  campaignId     String? @db.Uuid
+  campaign       Campaign? @relation(fields: [campaignId], references: [id])
+
+  records ImportRecord[]
+
+  @@index([organizationId])
+  @@index([campaignId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("import_jobs")
+}
+
+model ImportRecord {
+  id          String   @id @default(uuid()) @db.Uuid
+  rowNumber   Int?
+  businessName String?
+  phone       String?
+  email       String?
+  industry    String?  @db.VarChar(100)
+  previewUrl  String?  @db.VarChar(512)
+  personalizedMessage String?
+  status      String   @default("pending") @db.VarChar(20)
+  errors      Json?    @default("[]")
+  rawData     Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  importJobId        String           @db.Uuid
+  importJob          ImportJob         @relation(fields: [importJobId], references: [id], onDelete: Cascade)
+  campaignBusinessId String?          @db.Uuid
+  campaignBusiness   CampaignBusiness? @relation(fields: [campaignBusinessId], references: [id])
+
+  @@index([importJobId])
+  @@index([campaignBusinessId])
+  @@index([status])
+  @@map("import_records")
 }

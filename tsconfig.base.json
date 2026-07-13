@@ -77,6 +77,8 @@
       "@conversation-platform/analytics-engine/*": ["./packages/analytics-engine/src/*"],
       "@conversation-platform/notification-engine": ["./packages/notification-engine/src"],
       "@conversation-platform/notification-engine/*": ["./packages/notification-engine/src/*"],
+      "@conversation-platform/inbox-engine": ["./packages/inbox-engine/src"],
+      "@conversation-platform/inbox-engine/*": ["./packages/inbox-engine/src/*"],
       "@conversation-platform/channel-core": ["./packages/channel-core/src"],
       "@conversation-platform/channel-core/*": ["./packages/channel-core/src/*"],
       "@conversation-platform/webhook-service": ["./services/webhook-service/src"],
@@ -126,7 +128,9 @@
       "@conversation-platform/campaign": ["./packages/campaign/src"],
       "@conversation-platform/campaign/*": ["./packages/campaign/src/*"],
       "@conversation-platform/campaign-executor": ["./packages/campaign-executor/src"],
-      "@conversation-platform/campaign-executor/*": ["./packages/campaign-executor/src/*"]
+      "@conversation-platform/campaign-executor/*": ["./packages/campaign-executor/src/*"],
+      "@conversation-platform/outreach-integration": ["./packages/outreach-integration/src"],
+      "@conversation-platform/outreach-integration/*": ["./packages/outreach-integration/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", ".next", "out", "coverage", "apps/dashboard", "apps/documentation", "packages/ui", "playwright.config.ts"]

@@ -45,6 +45,8 @@ const adminNavItems: NavItem[] = [
 
 const tenantNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/tenant', icon: LayoutDashboard },
+  { label: 'Inbox', href: '/tenant/inbox', icon: MessageSquare },
+  { label: 'Contacts', href: '/tenant/contacts', icon: Users },
   { label: 'Conversations', href: '/tenant/conversations', icon: MessageSquare },
   { label: 'Knowledge', href: '/tenant/knowledge', icon: BookOpen },
   { label: 'Workflows', href: '/tenant/workflows', icon: GitBranch },

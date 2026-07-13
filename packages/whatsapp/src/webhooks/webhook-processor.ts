@@ -1,5 +1,6 @@
 import type { Logger } from '@conversation-platform/logger'
 import type { DeliveryTracker } from '@conversation-platform/delivery-tracking'
+import type { IncomingPipeline } from '@conversation-platform/inbox-engine'
 import type { WhatsAppWebhookPayload, WebhookChange } from '../types'
 
 function isMessageStatus(entry: WebhookChange): boolean {
@@ -80,9 +81,10 @@ export class WhatsAppWebhookProcessor {
   constructor(
     private readonly deliveryTracker: DeliveryTracker,
     private readonly logger: Logger,
+    private readonly inboxPipeline?: IncomingPipeline,
   ) {}
 
-  async process(payload: WhatsAppWebhookPayload): Promise<WebhookResult> {
+  async process(payload: WhatsAppWebhookPayload, tenantId?: string): Promise<WebhookResult> {
     const result: WebhookResult = {
       recordedEvents: 0,
       acknowledgedStatuses: [],
@@ -148,6 +150,34 @@ export class WhatsAppWebhookProcessor {
               },
               'WhatsApp incoming message received',
             )
+
+            if (this.inboxPipeline && tenantId) {
+              try {
+                const { createWhatsAppAdapter } = await import('../adapter/whatsapp-adapter')
+                const adapter = createWhatsAppAdapter(this.logger)
+                const pipelineResult = await this.inboxPipeline.process({
+                  tenantId,
+                  adapter,
+                  payload: payload as unknown as Record<string, unknown>,
+                })
+                if (pipelineResult.success) {
+                  this.logger.info(
+                    { conversationId: pipelineResult.context?.conversation.conversationId },
+                    'Incoming message processed by inbox pipeline',
+                  )
+                } else {
+                  this.logger.warn(
+                    { error: pipelineResult.error },
+                    'Inbox pipeline processing failed',
+                  )
+                }
+              } catch (pipelineError) {
+                this.logger.error(
+                  { error: pipelineError },
+                  'Failed to process incoming message through inbox pipeline',
+                )
+              }
+            }
           }
         }
       }

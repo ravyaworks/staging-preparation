@@ -15,6 +15,7 @@ import { ConversationRepository } from './repositories/conversation.repository';
 import { MessageRepository } from './repositories/message.repository';
 import { WebhookRepository } from './repositories/webhook.repository';
 import { OutreachJobRepository } from './repositories/outreach-job.repository';
+import { ContactRepository } from './repositories/contact.repository';
 
 export {
   createPrismaClient,
@@ -35,4 +36,5 @@ export {
   MessageRepository,
   WebhookRepository,
   OutreachJobRepository,
+  ContactRepository,
 };
