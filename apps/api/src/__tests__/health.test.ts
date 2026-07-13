@@ -19,6 +19,7 @@ vi.mock('@conversation-platform/database', () => ({
     $disconnect: vi.fn(),
   }),
   PrismaClient: vi.fn(),
+  BaseRepository: MockRepository,
   ChannelConnectionRepository: MockRepository,
   IntegrationRepository: MockRepository,
   IntegrationLogRepository: MockRepository,
@@ -27,6 +28,7 @@ vi.mock('@conversation-platform/database', () => ({
   ConversationRepository: MockRepository,
   MessageRepository: MockRepository,
   ApiKeyRepository: MockRepository,
+  OutreachJobRepository: MockRepository,
 }));
 
 const mockLogger: Logger = {

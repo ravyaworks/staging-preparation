@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Bell,
   LifeBuoy,
+  Send,
   type LucideIcon,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -49,6 +50,7 @@ const tenantNavItems: NavItem[] = [
   { label: 'Workflows', href: '/tenant/workflows', icon: GitBranch },
   { label: 'Team', href: '/tenant/team', icon: Users },
   { label: 'Analytics', href: '/tenant/analytics', icon: BarChart3 },
+  { label: 'Delivery', href: '/tenant/delivery', icon: Send },
   { label: 'Settings', href: '/tenant/settings', icon: Settings },
 ]
 

@@ -115,6 +115,51 @@ const spec = {
           metadata: { type: 'object' },
         },
       },
+      CampaignCreate: {
+        type: 'object',
+        required: ['name', 'channel'],
+        properties: {
+          name: { type: 'string', maxLength: 255 },
+          description: { type: 'string', maxLength: 2000 },
+          channel: { type: 'string', enum: ['whatsapp', 'email', 'sms', 'telegram', 'instagram', 'messenger', 'slack', 'website', 'api'] },
+        },
+      },
+      CampaignUpdate: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', maxLength: 255 },
+          description: { type: 'string', maxLength: 2000 },
+          channel: { type: 'string', enum: ['whatsapp', 'email', 'sms', 'telegram', 'instagram', 'messenger', 'slack', 'website', 'api'] },
+        },
+      },
+      CampaignImport: {
+        type: 'object',
+        required: ['businesses'],
+        properties: {
+          businesses: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['businessName', 'phone', 'personalizedMessage'],
+              properties: {
+                businessName: { type: 'string' },
+                phone: { type: 'string', description: 'E.164 format' },
+                email: { type: 'string', format: 'email' },
+                industry: { type: 'string' },
+                previewUrl: { type: 'string', format: 'uri' },
+                personalizedMessage: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+      CampaignTransition: {
+        type: 'object',
+        required: ['status'],
+        properties: {
+          status: { type: 'string', enum: ['draft', 'ready', 'running', 'paused', 'completed', 'cancelled', 'failed'] },
+        },
+      },
       Tenant: {
         type: 'object',
         required: ['name', 'slug'],
@@ -122,6 +167,93 @@ const spec = {
           name: { type: 'string' },
           slug: { type: 'string' },
           domain: { type: 'string' },
+        },
+      },
+      DeliveryEvent: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          jobId: { type: 'string' },
+          type: { type: 'string' },
+          previousStatus: { type: 'string', nullable: true },
+          currentStatus: { type: 'string' },
+          timestamp: { type: 'string', format: 'date-time' },
+          workerId: { type: 'string', nullable: true },
+          channel: { type: 'string', nullable: true },
+          metadata: { type: 'object' },
+        },
+      },
+      JobFailure: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          jobId: { type: 'string' },
+          errorType: { type: 'string' },
+          errorMessage: { type: 'string' },
+          retryCount: { type: 'integer' },
+          lastRetryAt: { type: 'string', format: 'date-time', nullable: true },
+          stackTrace: { type: 'string', nullable: true },
+          resolutionStatus: { type: 'string', enum: ['unresolved', 'resolved', 'dismissed', 'automatic'] },
+          resolvedAt: { type: 'string', format: 'date-time', nullable: true },
+          resolvedBy: { type: 'string', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      DeliveryAnalytics: {
+        type: 'object',
+        properties: {
+          periodStart: { type: 'string', format: 'date-time' },
+          periodEnd: { type: 'string', format: 'date-time' },
+          totalJobs: { type: 'integer' },
+          completedJobs: { type: 'integer' },
+          failedJobs: { type: 'integer' },
+          retriedJobs: { type: 'integer' },
+          successRate: { type: 'number' },
+          failureRate: { type: 'number' },
+          retryRate: { type: 'number' },
+          averageJobTimeMs: { type: 'integer' },
+          workerUtilization: { type: 'number' },
+          activeWorkers: { type: 'integer' },
+          idleWorkers: { type: 'integer' },
+        },
+      },
+      QueueHealth: {
+        type: 'object',
+        properties: {
+          currentLoad: { type: 'integer' },
+          queuedCount: { type: 'integer' },
+          processingCount: { type: 'integer' },
+          averageWaitTimeMs: { type: 'integer' },
+          throughputPerMinute: { type: 'integer' },
+          deadLetterCount: { type: 'integer' },
+          oldestJobAgeMs: { type: 'integer' },
+          isHealthy: { type: 'boolean' },
+        },
+      },
+      WorkerStatus: {
+        type: 'object',
+        properties: {
+          workerId: { type: 'string' },
+          status: { type: 'string' },
+          currentJobId: { type: 'string', nullable: true },
+          jobsProcessed: { type: 'integer' },
+          successCount: { type: 'integer' },
+          failureCount: { type: 'integer' },
+          averageProcessingMs: { type: 'integer' },
+          uptimeMs: { type: 'integer' },
+          lastHeartbeatAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      DeliveryNotification: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          type: { type: 'string' },
+          severity: { type: 'string', enum: ['info', 'warning', 'error', 'critical'] },
+          title: { type: 'string' },
+          message: { type: 'string' },
+          acknowledged: { type: 'boolean' },
+          createdAt: { type: 'string', format: 'date-time' },
         },
       },
     },
@@ -387,6 +519,539 @@ const spec = {
         summary: 'SSE event stream',
         security: [{ apiKey: [] }],
         responses: { '200': { description: 'Event stream' } },
+      },
+    },
+    '/campaigns': {
+      get: {
+        tags: ['Campaigns'],
+        summary: 'List campaigns',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20, maximum: 100 } },
+          { name: 'status', in: 'query', schema: { type: 'string' } },
+          { name: 'channel', in: 'query', schema: { type: 'string' } },
+          { name: 'search', in: 'query', schema: { type: 'string' } },
+          { name: 'sortBy', in: 'query', schema: { type: 'string', default: 'createdAt' } },
+          { name: 'sortOrder', in: 'query', schema: { type: 'string', enum: ['asc', 'desc'], default: 'desc' } },
+        ],
+        responses: { '200': { description: 'Campaign list' } },
+      },
+      post: {
+        tags: ['Campaigns'],
+        summary: 'Create campaign',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CampaignCreate' } } } },
+        responses: { '201': { description: 'Campaign created' } },
+      },
+    },
+    '/campaigns/{id}': {
+      get: {
+        tags: ['Campaigns'],
+        summary: 'Get campaign details with statistics',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Campaign details' } },
+      },
+      patch: {
+        tags: ['Campaigns'],
+        summary: 'Update campaign',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CampaignUpdate' } } } },
+        responses: { '200': { description: 'Campaign updated' } },
+      },
+      delete: {
+        tags: ['Campaigns'],
+        summary: 'Soft-delete campaign',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Campaign deleted' } },
+      },
+    },
+    '/campaigns/{id}/duplicate': {
+      post: {
+        tags: ['Campaigns'],
+        summary: 'Duplicate a campaign',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '201': { description: 'Campaign duplicated' } },
+      },
+    },
+    '/campaigns/{id}/transition': {
+      post: {
+        tags: ['Campaigns'],
+        summary: 'Change campaign status',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CampaignTransition' } } } },
+        responses: { '200': { description: 'Status changed' } },
+      },
+    },
+    '/campaigns/{id}/import': {
+      post: {
+        tags: ['Campaigns'],
+        summary: 'Import businesses into campaign',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CampaignImport' } } } },
+        responses: { '201': { description: 'Businesses imported' } },
+      },
+    },
+    '/campaigns/{id}/businesses': {
+      get: {
+        tags: ['Campaigns'],
+        summary: 'List campaign businesses',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'status', in: 'query', schema: { type: 'string' } },
+          { name: 'search', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: { '200': { description: 'Business list' } },
+      },
+    },
+    '/campaigns/{id}/statistics': {
+      get: {
+        tags: ['Campaigns'],
+        summary: 'Get campaign statistics',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Campaign statistics' } },
+      },
+    },
+    '/campaigns/{id}/statistics/recalculate': {
+      post: {
+        tags: ['Campaigns'],
+        summary: 'Recalculate campaign statistics',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Statistics recalculated' } },
+      },
+    },
+    '/campaigns/{id}/logs': {
+      get: {
+        tags: ['Campaigns'],
+        summary: 'Get campaign audit logs',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Campaign logs' } },
+      },
+    },
+    '/execution/campaigns/{id}/execute': {
+      post: {
+        tags: ['Campaign Execution'],
+        summary: 'Execute a campaign',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { config: { type: 'object' } } } } } },
+        responses: { '201': { description: 'Campaign execution started' } },
+      },
+    },
+    '/execution/campaigns/{id}/pause': {
+      post: {
+        tags: ['Campaign Execution'],
+        summary: 'Pause a running campaign',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Campaign paused' } },
+      },
+    },
+    '/execution/campaigns/{id}/resume': {
+      post: {
+        tags: ['Campaign Execution'],
+        summary: 'Resume a paused campaign',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Campaign resumed' } },
+      },
+    },
+    '/execution/campaigns/{id}/cancel': {
+      post: {
+        tags: ['Campaign Execution'],
+        summary: 'Cancel a campaign',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Campaign cancelled' } },
+      },
+    },
+    '/execution/campaigns/{id}/progress': {
+      get: {
+        tags: ['Campaign Execution'],
+        summary: 'Get campaign execution progress',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Campaign progress' } },
+      },
+    },
+    '/execution/jobs': {
+      get: {
+        tags: ['Campaign Execution'],
+        summary: 'List outreach jobs',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'status', in: 'query', schema: { type: 'string' } },
+          { name: 'campaignId', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: { '200': { description: 'Job list' } },
+      },
+    },
+    '/execution/jobs/{id}': {
+      get: {
+        tags: ['Campaign Execution'],
+        summary: 'Get job details',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Job details' } },
+      },
+    },
+    '/execution/jobs/{id}/retry': {
+      post: {
+        tags: ['Campaign Execution'],
+        summary: 'Retry a failed job',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Job requeued' } },
+      },
+    },
+    '/execution/jobs/{id}/skip': {
+      post: {
+        tags: ['Campaign Execution'],
+        summary: 'Skip a job',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Job skipped' } },
+      },
+    },
+    '/execution/jobs/retry-failed': {
+      post: {
+        tags: ['Campaign Execution'],
+        summary: 'Retry all failed jobs for a campaign',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['campaignId'], properties: { campaignId: { type: 'string' } } } } } },
+        responses: { '200': { description: 'Failed jobs requeued' } },
+      },
+    },
+    '/execution/queue/status': {
+      get: {
+        tags: ['Campaign Execution'],
+        summary: 'Get queue status',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Queue status' } },
+      },
+    },
+    '/execution/queue/dead-letter': {
+      get: {
+        tags: ['Campaign Execution'],
+        summary: 'Get dead letter queue entries',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'campaignId', in: 'query', schema: { type: 'string' } }],
+        responses: { '200': { description: 'Dead letter entries' } },
+      },
+    },
+    '/execution/workers': {
+      get: {
+        tags: ['Campaign Execution'],
+        summary: 'Get worker statuses',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Worker statuses' } },
+      },
+    },
+    '/execution/scheduler/status': {
+      get: {
+        tags: ['Campaign Execution'],
+        summary: 'Get scheduler state',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Scheduler state' } },
+      },
+    },
+
+    // ========== Delivery Tracking ==========
+
+    '/delivery/jobs': {
+      get: {
+        tags: ['Delivery Tracking'],
+        summary: 'List all outreach jobs',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'campaignId', in: 'query', schema: { type: 'string' } },
+          { name: 'status', in: 'query', schema: { type: 'string' } },
+          { name: 'search', in: 'query', schema: { type: 'string' } },
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+        ],
+        responses: { '200': { description: 'List of jobs with details' } },
+      },
+    },
+    '/delivery/jobs/{id}': {
+      get: {
+        tags: ['Delivery Tracking'],
+        summary: 'Get full job details including timeline and failures',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Job details' }, '404': { description: 'Job not found' } },
+      },
+    },
+    '/delivery/jobs/{id}/timeline': {
+      get: {
+        tags: ['Delivery Tracking'],
+        summary: 'Get job event timeline with durations',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Timeline entries' } },
+      },
+    },
+    '/delivery/jobs/{id}/events': {
+      get: {
+        tags: ['Delivery Tracking'],
+        summary: 'Get paginated delivery events for a job',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'limit', in: 'query', schema: { type: 'integer' } },
+          { name: 'offset', in: 'query', schema: { type: 'integer' } },
+        ],
+        responses: { '200': { description: 'Paginated events' } },
+      },
+    },
+    '/delivery/jobs/{id}/failures': {
+      get: {
+        tags: ['Delivery Tracking'],
+        summary: 'Get failures for a specific job',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Job failures' } },
+      },
+    },
+    '/delivery/failures': {
+      get: {
+        tags: ['Delivery Tracking'],
+        summary: 'Get unresolved failures across all jobs',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'limit', in: 'query', schema: { type: 'integer' } },
+          { name: 'offset', in: 'query', schema: { type: 'integer' } },
+        ],
+        responses: { '200': { description: 'Unresolved failures' } },
+      },
+    },
+    '/delivery/failures/stats': {
+      get: {
+        tags: ['Delivery Tracking'],
+        summary: 'Get aggregated failure statistics',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Failure stats', content: { 'application/json': { schema: { type: 'object' } } } } },
+      },
+    },
+    '/delivery/failures/{id}/resolve': {
+      post: {
+        tags: ['Delivery Tracking'],
+        summary: 'Resolve a failure',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { jobId: { type: 'string' }, resolutionStatus: { type: 'string' }, resolvedBy: { type: 'string' } } } } } },
+        responses: { '200': { description: 'Failure resolved' } },
+      },
+    },
+    '/delivery/analytics/delivery': {
+      get: {
+        tags: ['Delivery Tracking'],
+        summary: 'Get delivery analytics for a time period',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'periodStart', in: 'query', schema: { type: 'string', format: 'date-time' } },
+          { name: 'periodEnd', in: 'query', schema: { type: 'string', format: 'date-time' } },
+          { name: 'campaignId', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: { '200': { description: 'Delivery analytics' } },
+      },
+    },
+    '/delivery/analytics/queue-health': {
+      get: {
+        tags: ['Delivery Tracking'],
+        summary: 'Get queue health metrics',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Queue health' } },
+      },
+    },
+    '/delivery/workers': {
+      get: {
+        tags: ['Delivery Tracking'],
+        summary: 'List all workers with status',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Worker list' } },
+      },
+    },
+    '/delivery/workers/{id}': {
+      get: {
+        tags: ['Delivery Tracking'],
+        summary: 'Get worker status detail',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Worker status' } },
+      },
+    },
+    '/delivery/notifications': {
+      get: {
+        tags: ['Delivery Tracking'],
+        summary: 'List delivery notifications',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'unreadOnly', in: 'query', schema: { type: 'boolean' } },
+          { name: 'severity', in: 'query', schema: { type: 'string' } },
+          { name: 'type', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: { '200': { description: 'Notifications list' } },
+      },
+    },
+    '/delivery/notifications/{id}/acknowledge': {
+      post: {
+        tags: ['Delivery Tracking'],
+        summary: 'Acknowledge a notification',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Notification acknowledged' } },
+      },
+    },
+    '/delivery/events': {
+      post: {
+        tags: ['Delivery Tracking'],
+        summary: 'Record a delivery event (internal)',
+        security: [{ bearerAuth: [] }],
+        requestBody: { content: { 'application/json': { schema: { type: 'object', required: ['jobId', 'eventType', 'currentStatus'], properties: { jobId: { type: 'string' }, eventType: { type: 'string' }, currentStatus: { type: 'string' }, previousStatus: { type: 'string' }, workerId: { type: 'string' }, channel: { type: 'string' }, metadata: { type: 'object' } } } } } },
+        responses: { '201': { description: 'Event created' } },
+      },
+    },
+
+    // ========== WhatsApp Business Platform ==========
+
+    '/whatsapp/webhook': {
+      get: {
+        tags: ['WhatsApp'],
+        summary: 'Webhook verification endpoint (called by Meta)',
+        parameters: [
+          { name: 'hub.mode', in: 'query', schema: { type: 'string' } },
+          { name: 'hub.verify_token', in: 'query', schema: { type: 'string' } },
+          { name: 'hub.challenge', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: {
+          '200': { description: 'Webhook verified, challenge returned' },
+          '403': { description: 'Verification failed' },
+        },
+      },
+      post: {
+        tags: ['WhatsApp'],
+        summary: 'Receive WhatsApp webhook notifications (called by Meta)',
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object' } } } },
+        responses: { '200': { description: 'Webhook processed' } },
+      },
+    },
+    '/whatsapp/health': {
+      get: {
+        tags: ['WhatsApp'],
+        summary: 'WhatsApp integration health check',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'WhatsApp health status' } },
+      },
+    },
+    '/whatsapp/send': {
+      post: {
+        tags: ['WhatsApp'],
+        summary: 'Send a text message via WhatsApp',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['recipientPhone', 'message'], properties: { recipientPhone: { type: 'string' }, message: { type: 'string' }, metadata: { type: 'object' } } } } } },
+        responses: { '200': { description: 'Message sent' }, '422': { description: 'Send failed' } },
+      },
+    },
+    '/whatsapp/send/template': {
+      post: {
+        tags: ['WhatsApp'],
+        summary: 'Send a template message',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['recipientPhone', 'templateName'], properties: { recipientPhone: { type: 'string' }, templateName: { type: 'string' }, templateLanguage: { type: 'string' }, templateVariables: { type: 'object' } } } } } },
+        responses: { '200': { description: 'Template sent' } },
+      },
+    },
+    '/whatsapp/send/image': {
+      post: {
+        tags: ['WhatsApp'],
+        summary: 'Send an image message',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['recipientPhone', 'mediaId'], properties: { recipientPhone: { type: 'string' }, mediaId: { type: 'string' }, caption: { type: 'string' } } } } } },
+        responses: { '200': { description: 'Image sent' } },
+      },
+    },
+    '/whatsapp/send/document': {
+      post: {
+        tags: ['WhatsApp'],
+        summary: 'Send a document message',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['recipientPhone', 'mediaId'], properties: { recipientPhone: { type: 'string' }, mediaId: { type: 'string' }, filename: { type: 'string' }, caption: { type: 'string' } } } } } },
+        responses: { '200': { description: 'Document sent' } },
+      },
+    },
+    '/whatsapp/templates': {
+      get: {
+        tags: ['WhatsApp'],
+        summary: 'Sync WhatsApp message templates',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Template list' } },
+      },
+      post: {
+        tags: ['WhatsApp'],
+        summary: 'Create a new message template',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['name', 'language', 'category', 'components'], properties: { name: { type: 'string' }, language: { type: 'string' }, category: { type: 'string' }, components: { type: 'array' } } } } } },
+        responses: { '201': { description: 'Template created' } },
+      },
+    },
+    '/whatsapp/templates/{name}': {
+      get: {
+        tags: ['WhatsApp'],
+        summary: 'Get a specific template by name',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'name', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Template details' }, '404': { description: 'Not found' } },
+      },
+    },
+    '/whatsapp/templates/{id}': {
+      delete: {
+        tags: ['WhatsApp'],
+        summary: 'Delete a message template',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Template deleted' } },
+      },
+    },
+    '/whatsapp/media/upload': {
+      post: {
+        tags: ['WhatsApp'],
+        summary: 'Upload media to WhatsApp',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['filePath', 'mimeType'], properties: { filePath: { type: 'string' }, mimeType: { type: 'string' } } } } } },
+        responses: { '201': { description: 'Media uploaded' } },
+      },
+    },
+    '/whatsapp/media/{id}': {
+      get: {
+        tags: ['WhatsApp'],
+        summary: 'Get media download URL',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Media URL' } },
+      },
+    },
+    '/whatsapp/validate/phone': {
+      post: {
+        tags: ['WhatsApp'],
+        summary: 'Validate a phone number',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['phone'], properties: { phone: { type: 'string' } } } } } },
+        responses: { '200': { description: 'Validation result' } },
       },
     },
   },

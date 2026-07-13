@@ -44,3 +44,15 @@ export const updateTenantSchema = z.object({
   domain: z.string().optional(),
   settings: z.record(z.string(), z.unknown()).optional(),
 });
+
+const phoneRegex = /^\+?[1-9]\d{6,14}$/;
+
+export const outreachSendSchema = z.object({
+  recipientName: z.string().min(1).max(255),
+  recipientPhone: z.string().regex(phoneRegex, 'Invalid phone number. Must be in E.164 format (e.g. +1234567890)'),
+  messageTemplate: z.string().min(1).max(500),
+  personalizedMessage: z.string().min(1).max(5000),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export type OutreachSendPayload = z.infer<typeof outreachSendSchema>;

@@ -29,6 +29,7 @@ model Tenant {
   organizations Organization[]
   events       Event[]
   notifications Notification[]
+  outreachJobs OutreachJob[]
   channelConnections ChannelConnection[]
   integrations  Integration[]
   conversations Conversation[]
@@ -65,6 +66,8 @@ model User {
   files      File[]
   notifications Notification[]
   conversations Conversation[]
+  campaigns Campaign[]
+  campaignLogs CampaignLog[]
 
   @@index([tenantId])
   @@index([email])
@@ -83,7 +86,8 @@ model Organization {
   tenantId String @db.Uuid
   tenant   Tenant @relation(fields: [tenantId], references: [id])
 
-  users User[]
+  users     User[]
+  campaigns Campaign[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -420,4 +424,225 @@ model Message {
   @@index([conversationId])
   @@index([createdAt])
   @@map("messages")
+}
+
+model OutreachJob {
+  id                   String    @id @default(uuid()) @db.Uuid
+  recipientName        String    @db.VarChar(255)
+  recipientPhone       String    @db.VarChar(50)
+  messageTemplate      String    @db.VarChar(500)
+  personalizedMessage  String    @db.Text
+  metadata             Json?     @default("{}")
+  status               String    @default("pending") @db.VarChar(20)
+  attempts             Int       @default(0)
+  maxAttempts          Int       @default(3)
+  lastError            String?   @db.Text
+  senderResult         Json?     @default("{}")
+  scheduledAt          DateTime?
+  lockedAt             DateTime?
+  lockedBy             String?   @db.VarChar(100)
+  processedAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  tenantId String? @db.Uuid
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
+  campaignId     String?    @db.Uuid
+  campaign       Campaign?  @relation(fields: [campaignId], references: [id])
+
+  deliveryEvents DeliveryEvent[]
+  failures       JobFailure[]
+
+  @@index([status])
+  @@index([tenantId])
+  @@index([campaignId])
+  @@index([lockedAt])
+  @@index([createdAt])
+  @@map("outreach_jobs")
+}
+
+model Campaign {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String    @db.VarChar(255)
+  description  String?   @db.Text
+  channel      String    @db.VarChar(50)
+  status       String    @default("draft") @db.VarChar(20)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  startedAt    DateTime?
+  completedAt  DateTime?
+  deletedAt    DateTime?
+
+  organizationId String      @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdBy      String?     @db.Uuid
+  creator        User?       @relation(fields: [createdBy], references: [id])
+
+  businesses   CampaignBusiness[]
+  statistics   CampaignStatistics[]
+  logs         CampaignLog[]
+  tags         CampaignTag[]
+  outreachJobs OutreachJob[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([channel])
+  @@index([createdAt])
+  @@map("campaigns")
+}
+
+model CampaignBusiness {
+  id                   String   @id @default(uuid()) @db.Uuid
+  businessName         String   @db.VarChar(255)
+  phone                String   @db.VarChar(50)
+  email                String?  @db.VarChar(255)
+  industry             String?  @db.VarChar(100)
+  previewUrl           String?  @db.VarChar(512)
+  personalizedMessage  String   @db.Text
+  status               String   @default("pending") @db.VarChar(20)
+  errors               Json?    @default("[]")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  campaignId     String  @db.Uuid
+  campaign       Campaign @relation(fields: [campaignId], references: [id])
+  outreachJobId  String? @db.Uuid
+
+  @@unique([campaignId, phone])
+  @@index([campaignId])
+  @@index([status])
+  @@map("campaign_businesses")
+}
+
+model CampaignStatistics {
+  id              String   @id @default(uuid()) @db.Uuid
+  totalBusinesses Int      @default(0)
+  jobsCreated     Int      @default(0)
+  pending         Int      @default(0)
+  queued          Int      @default(0)
+  sending         Int      @default(0)
+  sent            Int      @default(0)
+  delivered       Int      @default(0)
+  read            Int      @default(0)
+  failed          Int      @default(0)
+  replied         Int      @default(0)
+  updatedAt       DateTime @updatedAt
+
+  campaignId String  @db.Uuid
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+
+  @@unique([campaignId])
+  @@map("campaign_statistics")
+}
+
+model CampaignLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  action     String   @db.VarChar(50)
+  message    String   @db.Text
+  metadata   Json?    @default("{}")
+  createdAt  DateTime @default(now())
+
+  campaignId String  @db.Uuid
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  userId     String? @db.Uuid
+  user       User?   @relation(fields: [userId], references: [id])
+
+  @@index([campaignId])
+  @@index([createdAt])
+  @@map("campaign_logs")
+}
+
+model CampaignTag {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String   @db.VarChar(100)
+  color      String?  @db.VarChar(20)
+  createdAt  DateTime @default(now())
+
+  campaignId String  @db.Uuid
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+
+  @@unique([campaignId, name])
+  @@index([campaignId])
+  @@map("campaign_tags")
+}
+
+model DeliveryEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  type        String   @db.VarChar(50)
+  previousStatus String? @db.VarChar(20)
+  currentStatus String  @db.VarChar(20)
+  timestamp   DateTime @default(now())
+  workerId    String?  @db.VarChar(100)
+  channel     String?  @db.VarChar(50)
+  metadata    Json?    @default("{}")
+
+  jobId       String   @db.Uuid
+  job         OutreachJob @relation(fields: [jobId], references: [id])
+
+  @@index([jobId])
+  @@index([jobId, timestamp])
+  @@index([type])
+  @@index([timestamp])
+  @@map("delivery_events")
+}
+
+model JobFailure {
+  id              String    @id @default(uuid()) @db.Uuid
+  errorType       String    @db.VarChar(100)
+  errorMessage    String    @db.Text
+  retryCount      Int       @default(0)
+  lastRetryAt     DateTime?
+  stackTrace      String?   @db.Text
+  resolutionStatus String   @default("unresolved") @db.VarChar(20)
+  resolvedAt      DateTime?
+  resolvedBy      String?   @db.Uuid
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  jobId           String    @db.Uuid
+  job             OutreachJob @relation(fields: [jobId], references: [id])
+
+  @@index([jobId])
+  @@index([resolutionStatus])
+  @@index([errorType])
+  @@map("job_failures")
+}
+
+model WorkerMetric {
+  id                 String   @id @default(uuid()) @db.Uuid
+  workerId           String   @db.VarChar(100)
+  currentJobId       String?  @db.Uuid
+  jobsProcessed      Int      @default(0)
+  successCount       Int      @default(0)
+  failureCount       Int      @default(0)
+  averageProcessingMs Int     @default(0)
+  lastHeartbeatAt    DateTime @default(now())
+  status             String   @default("idle") @db.VarChar(20)
+  startedAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([workerId])
+  @@index([status])
+  @@index([lastHeartbeatAt])
+  @@map("worker_metrics")
+}
+
+model DeliveryNotification {
+  id          String   @id @default(uuid()) @db.Uuid
+  type        String   @db.VarChar(50)
+  severity    String   @default("info") @db.VarChar(20)
+  title       String   @db.VarChar(255)
+  message     String   @db.Text
+  metadata    Json?    @default("{}")
+  acknowledged   Boolean @default(false)
+  acknowledgedAt DateTime?
+  acknowledgedBy String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  @@index([type])
+  @@index([severity])
+  @@index([acknowledged])
+  @@index([createdAt])
+  @@map("delivery_notifications")
 }

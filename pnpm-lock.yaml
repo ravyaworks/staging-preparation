@@ -148,6 +148,9 @@ importers:
       '@conversation-platform/cache':
         specifier: workspace:*
         version: link:../../packages/cache
+      '@conversation-platform/campaign':
+        specifier: workspace:*
+        version: link:../../packages/campaign
       '@conversation-platform/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -188,6 +191,12 @@ importers:
         specifier: ^8.21.0
         version: 8.21.0
     devDependencies:
+      '@conversation-platform/campaign-executor':
+        specifier: workspace:*
+        version: link:../../packages/campaign-executor
+      '@conversation-platform/delivery-tracking':
+        specifier: workspace:*
+        version: link:../../packages/delivery-tracking
       '@types/compression':
         specifier: ^1.7.5
         version: 1.8.1
@@ -649,6 +658,39 @@ importers:
         specifier: ^5.6.0
         version: 5.11.1
 
+  packages/campaign:
+    dependencies:
+      '@conversation-platform/database':
+        specifier: workspace:*
+        version: link:../database
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@conversation-platform/queue':
+        specifier: workspace:*
+        version: link:../queue
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
+  packages/campaign-executor:
+    dependencies:
+      '@conversation-platform/campaign':
+        specifier: workspace:*
+        version: link:../campaign
+      '@conversation-platform/database':
+        specifier: workspace:*
+        version: link:../database
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@conversation-platform/queue':
+        specifier: workspace:*
+        version: link:../queue
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
   packages/channel-core:
     dependencies:
       '@conversation-platform/event-bus':
@@ -704,6 +746,21 @@ importers:
       tsx:
         specifier: ^4.7.0
         version: 4.23.0
+
+  packages/delivery-tracking:
+    dependencies:
+      '@conversation-platform/campaign-executor':
+        specifier: workspace:*
+        version: link:../campaign-executor
+      '@conversation-platform/database':
+        specifier: workspace:*
+        version: link:../database
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../logger
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
 
   packages/document-processor:
     dependencies:
@@ -937,6 +994,37 @@ importers:
       '@conversation-platform/types':
         specifier: workspace:*
         version: link:../types
+
+  packages/whatsapp:
+    dependencies:
+      '@conversation-platform/campaign-executor':
+        specifier: workspace:*
+        version: link:../campaign-executor
+      '@conversation-platform/config':
+        specifier: workspace:*
+        version: link:../config
+      '@conversation-platform/database':
+        specifier: workspace:*
+        version: link:../database
+      '@conversation-platform/delivery-tracking':
+        specifier: workspace:*
+        version: link:../delivery-tracking
+      '@conversation-platform/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@conversation-platform/storage':
+        specifier: workspace:*
+        version: link:../storage
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@types/express':
+        specifier: ^4.17.21
+        version: 4.17.25
+      express:
+        specifier: ^4.21.0
+        version: 4.22.2
 
   packages/workflow-engine:
     dependencies:

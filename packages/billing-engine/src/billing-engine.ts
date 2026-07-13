@@ -1,5 +1,5 @@
 import type {
-  Plan, PlanTier, Subscription, SubscriptionStatus, UsageRecord,
+  Plan, PlanTier, PlanLimits, Subscription, SubscriptionStatus, UsageRecord,
   UsageMetric, UsageSummary, Invoice, InvoiceLineItem,
 } from './types'
 import { BillingError } from './types'
@@ -248,16 +248,17 @@ export class BillingEngine {
 
   checkLimit(tenantId: string, metric: UsageMetric, value: number): boolean {
     const summary = this.getUsageSummary(tenantId)
-    const limitKey = {
+    const limitMap: Record<UsageMetric, keyof PlanLimits | undefined> = {
       messages_sent: 'maxMessagesPerMonth', messages_received: 'maxMessagesPerMonth',
       conversations_created: 'maxConversations', api_requests: 'maxApiRequestsPerMinute',
       ai_tokens: 'maxMessagesPerMonth', storage_bytes: 'maxStorageMb',
       knowledge_documents: 'maxKnowledgeDocuments', workflow_executions: 'maxWorkflows',
       team_members: 'maxTeamMembers', integrations_active: 'maxIntegrations',
-    }[metric]
+    }
+    const limitKey = limitMap[metric]
 
     if (!limitKey) return true
-    const limit = (summary.limits as Record<string, number | boolean | string>)[limitKey]
+    const limit = summary.limits[limitKey]
     if (limit === Infinity || limit === undefined) return true
     return summary.metrics[metric] + value <= Number(limit)
   }
