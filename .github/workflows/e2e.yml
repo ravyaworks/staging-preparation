@@ -1,0 +1,97 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 20.x
+  PNPM_VERSION: 9
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/conversation_platform_test
+  REDIS_URL: redis://redis:6379
+  WHATSAPP_API_KEY: test-whatsapp-key
+  WHATSAPP_PHONE_NUMBER_ID: test-phone-id
+  WHATSAPP_BUSINESS_ACCOUNT_ID: test-business-id
+  WHATSAPP_API_VERSION: v18.0
+  JWT_SECRET: test-jwt-secret-for-e2e-tests
+  ENCRYPTION_KEY: test-encryption-key-32-chars-long!!
+  NODE_ENV: test
+
+jobs:
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: conversation_platform_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm prisma:generate
+      - run: pnpm prisma:migrate:deploy
+      - run: pnpm build
+      - name: Install Playwright browsers
+        run: pnpm playwright install chromium
+      - name: Start application
+        run: |
+          pnpm start:api &
+          npx wait-on http://localhost:3001/health --timeout 60000
+      - name: Run E2E tests
+        run: pnpm test:e2e
+        env:
+          BASE_URL: http://localhost:3001
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: test-results/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-screenshots
+          path: tests/e2e/screenshots/
+          retention-days: 14
+      - name: Upload Playwright report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./playwright-report
+          destination_dir: e2e-reports
+          keep_files: true

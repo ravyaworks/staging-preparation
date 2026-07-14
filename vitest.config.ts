@@ -55,6 +55,8 @@ export default defineConfig({
       '@conversation-platform/tools': path.resolve(__dirname, 'packages/tools/src'),
       '@conversation-platform/plugin-framework': path.resolve(__dirname, 'packages/plugin-framework/src'),
       '@conversation-platform/analytics-engine': path.resolve(__dirname, 'packages/analytics-engine/src'),
+      '@conversation-platform/analytics': path.resolve(__dirname, 'packages/analytics/src'),
+      '@conversation-platform/administration': path.resolve(__dirname, 'packages/administration/src'),
       '@conversation-platform/notification-engine': path.resolve(__dirname, 'packages/notification-engine/src'),
       '@conversation-platform/inbox-engine': path.resolve(__dirname, 'packages/inbox-engine/src'),
       '@conversation-platform/campaign': path.resolve(__dirname, 'packages/campaign/src'),

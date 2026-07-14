@@ -244,6 +244,124 @@ const spec = {
           lastHeartbeatAt: { type: 'string', format: 'date-time' },
         },
       },
+      OutreachSingleRequest: {
+        type: 'object',
+        required: ['businessName', 'phone', 'personalizedMessage'],
+        properties: {
+          businessName: { type: 'string' },
+          industry: { type: 'string' },
+          phone: { type: 'string', description: 'E.164 format' },
+          email: { type: 'string', format: 'email' },
+          previewUrl: { type: 'string', format: 'uri' },
+          personalizedMessage: { type: 'string' },
+          contactPerson: { type: 'string' },
+          campaignName: { type: 'string' },
+          tags: { type: 'array', items: { type: 'string' } },
+          metadata: { type: 'object' },
+        },
+      },
+      OutreachSubmitResult: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean' },
+          importJobId: { type: 'string' },
+          campaignId: { type: 'string' },
+          businesses: { type: 'array', items: { $ref: '#/components/schemas/OutreachBusinessItem' } },
+          errors: { type: 'array', items: { $ref: '#/components/schemas/OutreachError' } },
+        },
+      },
+      OutreachBusinessItem: {
+        type: 'object',
+        properties: {
+          businessName: { type: 'string' },
+          phone: { type: 'string' },
+          status: { type: 'string', enum: ['imported', 'duplicate', 'invalid', 'failed'] },
+          campaignBusinessId: { type: 'string' },
+          outreachJobId: { type: 'string' },
+          error: { type: 'string' },
+        },
+      },
+      OutreachError: {
+        type: 'object',
+        properties: {
+          row: { type: 'integer' },
+          field: { type: 'string' },
+          message: { type: 'string' },
+          value: { type: 'string' },
+        },
+      },
+      OutreachImportJob: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          type: { type: 'string', enum: ['json', 'csv'] },
+          status: { type: 'string', enum: ['pending', 'processing', 'completed', 'failed', 'partial'] },
+          totalRecords: { type: 'integer' },
+          successCount: { type: 'integer' },
+          failedCount: { type: 'integer' },
+          errorSummary: { type: 'array', items: { type: 'object', properties: { row: { type: 'integer' }, message: { type: 'string' } } } },
+          campaignId: { type: 'string', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+          completedAt: { type: 'string', format: 'date-time', nullable: true },
+        },
+      },
+      OutreachImportRecord: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          rowNumber: { type: 'integer', nullable: true },
+          businessName: { type: 'string', nullable: true },
+          phone: { type: 'string', nullable: true },
+          email: { type: 'string', nullable: true },
+          status: { type: 'string' },
+          errors: { type: 'array', items: { type: 'object', properties: { field: { type: 'string' }, message: { type: 'string' } } } },
+          campaignBusinessId: { type: 'string', nullable: true },
+        },
+      },
+      OutreachBusinessDetail: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          businessName: { type: 'string' },
+          phone: { type: 'string' },
+          email: { type: 'string', nullable: true },
+          industry: { type: 'string', nullable: true },
+          previewUrl: { type: 'string', nullable: true },
+          personalizedMessage: { type: 'string' },
+          status: { type: 'string' },
+          campaignId: { type: 'string' },
+          campaignName: { type: 'string' },
+          outreachJobId: { type: 'string', nullable: true },
+          outreachJobStatus: { type: 'string', nullable: true },
+          contactId: { type: 'string', nullable: true },
+          conversationId: { type: 'string', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      OutreachApiKey: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' },
+          keyPrefix: { type: 'string' },
+          isActive: { type: 'boolean' },
+          allowedIps: { type: 'array', items: { type: 'string' } },
+          rateLimitPerMinute: { type: 'integer' },
+          lastUsedAt: { type: 'string', format: 'date-time', nullable: true },
+          expiresAt: { type: 'string', format: 'date-time', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      OutreachCreateApiKey: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: { type: 'string' },
+          allowedIps: { type: 'array', items: { type: 'string' } },
+          rateLimitPerMinute: { type: 'integer', default: 60 },
+          expiresAt: { type: 'string', format: 'date-time' },
+        },
+      },
       DeliveryNotification: {
         type: 'object',
         properties: {
@@ -1242,6 +1360,268 @@ const spec = {
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'channel', in: 'path', required: true, schema: { type: 'string' } }],
         responses: { '201': { description: 'Adapter registered' }, '409': { description: 'Already registered' } },
+      },
+    },
+
+    // ========== Outreach ==========
+
+    '/outreach': {
+      post: {
+        tags: ['Outreach'],
+        summary: 'Submit a single outreach request',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/OutreachSingleRequest' } } } },
+        responses: { '201': { description: 'Outreach submitted' }, '422': { description: 'Validation error' } },
+      },
+    },
+    '/outreach/bulk': {
+      post: {
+        tags: ['Outreach'],
+        summary: 'Submit bulk outreach businesses',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['businesses'], properties: { businesses: { type: 'array', items: { $ref: '#/components/schemas/OutreachSingleRequest' } } } } } } },
+        responses: { '201': { description: 'Bulk submission started' }, '422': { description: 'Validation error' } },
+      },
+    },
+    '/outreach/import': {
+      post: {
+        tags: ['Outreach'],
+        summary: 'Import businesses from JSON or CSV data',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['type', 'data'], properties: { type: { type: 'string', enum: ['json', 'csv'] }, data: { type: 'object' }, campaignName: { type: 'string' }, campaignId: { type: 'string' } } } } } },
+        responses: { '201': { description: 'Import started' }, '422': { description: 'Import failed' } },
+      },
+    },
+    '/outreach/jobs': {
+      get: {
+        tags: ['Outreach'],
+        summary: 'List import jobs',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+        ],
+        responses: { '200': { description: 'Import job list' } },
+      },
+    },
+    '/outreach/jobs/{id}': {
+      get: {
+        tags: ['Outreach'],
+        summary: 'Get import job status',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Import job details' }, '404': { description: 'Not found' } },
+      },
+    },
+    '/outreach/jobs/{id}/records': {
+      get: {
+        tags: ['Outreach'],
+        summary: 'Get import job records',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 50 } },
+        ],
+        responses: { '200': { description: 'Import job records' }, '404': { description: 'Not found' } },
+      },
+    },
+    '/outreach/businesses': {
+      get: {
+        tags: ['Outreach'],
+        summary: 'List businesses with search and filters',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'status', in: 'query', schema: { type: 'string' } },
+          { name: 'campaignId', in: 'query', schema: { type: 'string' } },
+          { name: 'search', in: 'query', schema: { type: 'string' } },
+          { name: 'sortBy', in: 'query', schema: { type: 'string', enum: ['businessName', 'phone', 'status', 'createdAt'] } },
+          { name: 'sortOrder', in: 'query', schema: { type: 'string', enum: ['asc', 'desc'] } },
+        ],
+        responses: { '200': { description: 'Business list' } },
+      },
+    },
+    '/outreach/businesses/{id}': {
+      get: {
+        tags: ['Outreach'],
+        summary: 'Get business detail',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Business details' }, '404': { description: 'Not found' } },
+      },
+    },
+    '/outreach/businesses/{id}/traceability': {
+      get: {
+        tags: ['Outreach'],
+        summary: 'Get full traceability chain for a business',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Traceability chain' }, '404': { description: 'Not found' } },
+      },
+    },
+    '/outreach/campaigns/{id}/outreach': {
+      post: {
+        tags: ['Outreach'],
+        summary: 'Submit businesses to an existing campaign',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['businesses'], properties: { businesses: { type: 'array', items: { $ref: '#/components/schemas/OutreachSingleRequest' } } } } } } },
+        responses: { '201': { description: 'Businesses added to campaign' }, '422': { description: 'Validation error' } },
+      },
+    },
+    '/outreach/api-keys': {
+      get: {
+        tags: ['Outreach'],
+        summary: 'List API keys',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'API key list' } },
+      },
+      post: {
+        tags: ['Outreach'],
+        summary: 'Create a new API key',
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/OutreachCreateApiKey' } } } },
+        responses: { '201': { description: 'API key created (raw key returned once)' } },
+      },
+    },
+    '/outreach/api-keys/{id}': {
+      delete: {
+        tags: ['Outreach'],
+        summary: 'Revoke an API key',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'API key revoked' } },
+      },
+    },
+
+    // ========== Analytics ==========
+
+    '/analytics/overview': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Executive dashboard overview with aggregated platform metrics',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Overview stats' } },
+      },
+    },
+    '/analytics/campaigns': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Campaign performance analytics',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'startDate', in: 'query', schema: { type: 'string', format: 'date' } },
+          { name: 'endDate', in: 'query', schema: { type: 'string', format: 'date' } },
+          { name: 'channel', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: { '200': { description: 'Campaign analytics' } },
+      },
+    },
+    '/analytics/conversations': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Conversation analytics and trend data',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'channel', in: 'query', schema: { type: 'string' } },
+          { name: 'startDate', in: 'query', schema: { type: 'string', format: 'date' } },
+          { name: 'endDate', in: 'query', schema: { type: 'string', format: 'date' } },
+          { name: 'organizationId', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: { '200': { description: 'Conversation analytics' } },
+      },
+    },
+    '/analytics/delivery': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Delivery performance analytics with funnel',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'campaignId', in: 'query', schema: { type: 'string' } },
+          { name: 'startDate', in: 'query', schema: { type: 'string', format: 'date' } },
+          { name: 'endDate', in: 'query', schema: { type: 'string', format: 'date' } },
+        ],
+        responses: { '200': { description: 'Delivery analytics' } },
+      },
+    },
+    '/analytics/queue': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Queue operational analytics',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Queue analytics' } },
+      },
+    },
+    '/analytics/agents': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Agent performance analytics',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Agent analytics' } },
+      },
+    },
+    '/analytics/workflows': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Workflow execution analytics',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Workflow analytics' } },
+      },
+    },
+    '/analytics/channels': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Per-channel analytics comparison',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Channel analytics' } },
+      },
+    },
+    '/analytics/ai': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'AI engine performance analytics',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'AI analytics' } },
+      },
+    },
+    '/analytics/contacts': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Contact analytics and distribution',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Contact analytics' } },
+      },
+    },
+    '/analytics/organizations': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Organization-level analytics summary',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Organization analytics' } },
+      },
+    },
+    '/analytics/reports': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Export analytics report in specified format',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'type', in: 'query', required: true, schema: { type: 'string', enum: ['campaign', 'conversation', 'delivery', 'organization'] } },
+          { name: 'format', in: 'query', required: true, schema: { type: 'string', enum: ['csv', 'xlsx', 'pdf'] } },
+          { name: 'startDate', in: 'query', schema: { type: 'string', format: 'date' } },
+          { name: 'endDate', in: 'query', schema: { type: 'string', format: 'date' } },
+        ],
+        responses: { '200': { description: 'Report file download' } },
+      },
+    },
+    '/analytics/cache/invalidate': {
+      post: {
+        tags: ['Analytics'],
+        summary: 'Invalidate analytics cache',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Cache invalidated' } },
       },
     },
   },

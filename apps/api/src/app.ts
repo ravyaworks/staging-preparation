@@ -31,13 +31,14 @@ import { integrationsRoutes } from './routes/integrations.routes';
 import { messagesRoutes } from './routes/messages.routes';
 import { eventsRoutes } from './routes/events.routes';
 import { widgetRoutes } from './routes/widget.routes';
-import { createOutreachRoutes } from './routes/outreach.routes';
-import { createOutreachService } from './services/outreach.service';
+import { createOutreachModuleRoutes } from './modules/outreach/routes';
 import { createCampaignRoutes } from './routes/campaign.routes';
 import { createCampaignExecutionRoutes } from './modules/campaign-execution/routes';
 import { createDeliveryTrackingRoutes } from './modules/delivery-tracking/routes';
 import { createWhatsAppRoutes } from './routes/whatsapp.routes';
 import { createInboxRoutes } from './routes/inbox.routes';
+import { createAnalyticsRoutes } from './modules/analytics/routes';
+import { createAdminRoutes } from './modules/admin/routes';
 
 export function createApp(config: AppConfig, logger: Logger): express.Express {
   const app = express();
@@ -81,10 +82,7 @@ export function createApp(config: AppConfig, logger: Logger): express.Express {
   app.use('/api/v1/events', eventsRoutes);
   app.use('/api/v1/widgets', widgetRoutes);
 
-  const outreachService = createOutreachService(logger);
-  app.use('/api/v1/outreach', createOutreachRoutes(logger, outreachService));
-
-  outreachService.start();
+  app.use('/api/v1/outreach', createOutreachModuleRoutes(config, logger));
 
   app.use('/api/v1/campaigns', createCampaignRoutes(config, logger));
 
@@ -97,6 +95,8 @@ export function createApp(config: AppConfig, logger: Logger): express.Express {
 
   app.use('/api/v1/whatsapp', createWhatsAppRoutes(config, logger));
   app.use('/api/v1/inbox', createInboxRoutes(config, logger));
+  app.use('/api/v1/analytics', createAnalyticsRoutes(config, logger));
+  app.use('/api/v1/admin', createAdminRoutes(config, logger));
 
   app.use(notFoundHandler);
   app.use(errorHandler);

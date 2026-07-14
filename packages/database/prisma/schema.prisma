@@ -35,6 +35,7 @@ model Tenant {
   contacts      Contact[]
   conversations Conversation[]
   outreachApiKeys OutreachApiKey[]
+  featureFlags   FeatureFlag[]
 
   @@map("tenants")
 }
@@ -765,6 +766,81 @@ model ImportJob {
   @@index([status])
   @@index([createdAt])
   @@map("import_jobs")
+}
+
+model AnalyticsEvent {
+  id              String   @id @default(uuid()) @db.Uuid
+  type            String   @db.VarChar(100)
+  source          String   @db.VarChar(50)
+  tenantId        String?  @db.Uuid
+  organizationId  String?  @db.Uuid
+  userId          String?  @db.Uuid
+  campaignId      String?  @db.Uuid
+  conversationId  String?  @db.Uuid
+  contactId       String?  @db.Uuid
+  channel         String?  @db.VarChar(50)
+  value           Float?
+  data            Json     @default("{}")
+  metadata        Json?    @default("{}")
+  timestamp       DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([type, timestamp])
+  @@index([source, timestamp])
+  @@index([tenantId, timestamp])
+  @@index([organizationId, timestamp])
+  @@index([campaignId])
+  @@index([conversationId])
+  @@index([timestamp])
+  @@map("analytics_events")
+}
+
+model AnalyticsMetric {
+  id              String   @id @default(uuid()) @db.Uuid
+  metric          String   @db.VarChar(100)
+  value           Float
+  dimension       String?  @db.VarChar(255)
+  tenantId        String?  @db.Uuid
+  organizationId  String?  @db.Uuid
+  period          String   @db.VarChar(20)
+  bucket          DateTime
+  createdAt       DateTime @default(now())
+
+  @@unique([metric, period, bucket, dimension, tenantId, organizationId])
+  @@index([metric, tenantId, period, bucket])
+  @@index([metric, organizationId, period, bucket])
+  @@map("analytics_metrics")
+}
+
+model FeatureFlag {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @db.VarChar(100)
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  enabled     Boolean  @default(false)
+  isGlobal    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantId String? @db.Uuid
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@unique([key])
+  @@index([tenantId])
+  @@map("feature_flags")
+}
+
+model MaintenanceWindow {
+  id          String    @id @default(uuid()) @db.Uuid
+  message     String    @db.Text
+  isActive    Boolean   @default(false)
+  scheduledStart DateTime?
+  scheduledEnd   DateTime?
+  allowlist   String[]  @default([])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("maintenance_windows")
 }
 
 model ImportRecord {

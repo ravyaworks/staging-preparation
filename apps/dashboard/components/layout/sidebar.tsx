@@ -22,6 +22,9 @@ import {
   Bell,
   LifeBuoy,
   Send,
+  BarChart,
+  Activity,
+  Database,
   type LucideIcon,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -36,10 +39,18 @@ interface NavItem {
 const adminNavItems: NavItem[] = [
   { label: 'Overview', href: '/admin', icon: LayoutDashboard },
   { label: 'Tenants', href: '/admin/tenants', icon: Building2 },
+  { label: 'Organizations', href: '/admin/organizations', icon: Building2 },
   { label: 'Users', href: '/admin/users', icon: Users },
   { label: 'Roles', href: '/admin/roles', icon: Shield },
-  { label: 'Settings', href: '/admin/settings', icon: Settings },
+  { label: 'API Keys', href: '/admin/api-keys', icon: Code },
+  { label: 'Channels', href: '/admin/channels', icon: Activity },
+  { label: 'Feature Flags', href: '/admin/feature-flags', icon: Puzzle },
+  { label: 'Configuration', href: '/admin/configuration', icon: Settings },
+  { label: 'Webhooks', href: '/admin/webhooks', icon: Send },
   { label: 'Audit Log', href: '/admin/audit', icon: FileText },
+  { label: 'Backups', href: '/admin/backups', icon: Database },
+  { label: 'Maintenance', href: '/admin/maintenance', icon: Shield },
+  { label: 'System Health', href: '/admin/health', icon: Activity },
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
 ]
 
@@ -51,8 +62,9 @@ const tenantNavItems: NavItem[] = [
   { label: 'Knowledge', href: '/tenant/knowledge', icon: BookOpen },
   { label: 'Workflows', href: '/tenant/workflows', icon: GitBranch },
   { label: 'Team', href: '/tenant/team', icon: Users },
-  { label: 'Analytics', href: '/tenant/analytics', icon: BarChart3 },
+  { label: 'Analytics', href: '/tenant/analytics', icon: BarChart },
   { label: 'Delivery', href: '/tenant/delivery', icon: Send },
+  { label: 'Outreach', href: '/tenant/outreach', icon: Send },
   { label: 'Settings', href: '/tenant/settings', icon: Settings },
 ]
 

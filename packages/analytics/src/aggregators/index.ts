@@ -1,0 +1,7 @@
+export { BaseAggregator } from './base.aggregator'
+export { CampaignAggregator } from './campaign.aggregator'
+export { ConversationAggregator } from './conversation.aggregator'
+export { DeliveryAggregator } from './delivery.aggregator'
+export { AIAggregator } from './ai.aggregator'
+export { WorkflowAggregator } from './workflow.aggregator'
+export { QueueAggregator } from './queue.aggregator'

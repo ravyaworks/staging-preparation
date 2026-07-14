@@ -74,6 +74,8 @@
       "@conversation-platform/plugin-framework": ["./packages/plugin-framework/src"],
       "@conversation-platform/plugin-framework/*": ["./packages/plugin-framework/src/*"],
       "@conversation-platform/analytics-engine": ["./packages/analytics-engine/src"],
+      "@conversation-platform/analytics": ["./packages/analytics/src"],
+      "@conversation-platform/administration": ["./packages/administration/src"],
       "@conversation-platform/analytics-engine/*": ["./packages/analytics-engine/src/*"],
       "@conversation-platform/notification-engine": ["./packages/notification-engine/src"],
       "@conversation-platform/notification-engine/*": ["./packages/notification-engine/src/*"],
