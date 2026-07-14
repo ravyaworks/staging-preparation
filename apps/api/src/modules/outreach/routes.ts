@@ -5,6 +5,7 @@ import { authenticate } from '@conversation-platform/auth'
 import type { AuthContext } from '@conversation-platform/auth'
 import { getPrismaClient } from '@conversation-platform/database'
 import { OutreachApiService, outreachQuerySchema, createApiKeySchema } from '@conversation-platform/outreach-integration'
+import { createOutreachApiKeyAuth } from '../../middleware/outreach-api-key-auth'
 
 type AuthRequest = import('express').Request & { auth: AuthContext }
 
@@ -12,14 +13,12 @@ function getAuth(req: import('express').Request): AuthContext {
   return (req as AuthRequest).auth
 }
 
-async function getOrgId(userId: string): Promise<string> {
-  const prisma = getPrismaClient()
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { organizationId: true },
-  })
-  if (!user?.organizationId) throw new Error('User has no organization')
-  return user.organizationId
+function getOrgIdFromReq(req: import('express').Request): string {
+  if (req.outreachApiKey?.organizationId) {
+    return req.outreachApiKey.organizationId
+  }
+  const auth = getAuth(req)
+  return (auth as any).orgId
 }
 
 function getJwtConfig(config: AppConfig) {
@@ -37,12 +36,41 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
   const prisma = getPrismaClient()
   const outreachService = new OutreachApiService(prisma, logger)
 
-  router.use(authenticate(getJwtConfig(config)))
+  const jwtAuth = authenticate(getJwtConfig(config))
+  const apiKeyAuth = createOutreachApiKeyAuth(prisma, logger)
+
+  function dualAuth(req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) {
+    const authHeader = req.headers.authorization
+    if (authHeader) {
+      jwtAuth(req, res, (err) => {
+        if (err || res.headersSent) return
+        if ((req as any).auth) {
+          const user = (req as any).auth
+          prisma.user.findUnique({
+            where: { id: user.userId },
+            select: { organizationId: true },
+          }).then((u) => {
+            if (u?.organizationId) {
+              (req as any).auth.orgId = u.organizationId
+            }
+            next()
+          }).catch(() => next())
+        } else {
+          next()
+        }
+      })
+    } else {
+      apiKeyAuth(req, res, next)
+    }
+  }
+
+  router.use(dualAuth)
 
   router.post('/', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
-      const result = await outreachService.submitSingle(req.body, orgId, getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
+      const userId = req.outreachApiKey ? undefined : getAuth(req).userId
+      const result = await outreachService.submitSingle(req.body, orgId, userId)
       res.status(result.success ? 201 : 422).json({ success: result.success, data: result })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error'
@@ -52,13 +80,14 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
 
   router.post('/bulk', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
+      const userId = req.outreachApiKey ? undefined : getAuth(req).userId
       const { businesses } = req.body
       if (!Array.isArray(businesses)) {
         res.status(400).json({ success: false, error: 'businesses array is required' })
         return
       }
-      const result = await outreachService.submitBulk(businesses, orgId, getAuth(req).userId)
+      const result = await outreachService.submitBulk(businesses, orgId, userId)
       res.status(result.success ? 201 : 422).json({ success: result.success, data: result })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error'
@@ -68,13 +97,14 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
 
   router.post('/import', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
+      const userId = req.outreachApiKey ? undefined : getAuth(req).userId
       const { type, data, campaignName, campaignId } = req.body
       if (!type || !data) {
         res.status(400).json({ success: false, error: 'type and data are required' })
         return
       }
-      const result = await outreachService.submitImport(type, data, orgId, campaignName, campaignId, getAuth(req).userId)
+      const result = await outreachService.submitImport(type, data, orgId, campaignName, campaignId, userId)
       res.status(result.success ? 201 : 422).json({ success: result.success, data: result })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error'
@@ -84,7 +114,7 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
 
   router.get('/jobs', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
       const page = parseInt(req.query.page as string) || 1
       const limit = parseInt(req.query.limit as string) || 20
       const result = await outreachService.listImportJobs(orgId, page, limit)
@@ -97,7 +127,7 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
 
   router.get('/jobs/:id', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
       const result = await outreachService.getImportJobStatus(req.params.id, orgId)
       res.json({ success: true, data: result })
     } catch (error: unknown) {
@@ -108,7 +138,7 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
 
   router.get('/jobs/:id/records', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
       const page = parseInt(req.query.page as string) || 1
       const limit = parseInt(req.query.limit as string) || 50
       const result = await outreachService.getImportJobRecords(req.params.id, orgId, page, limit)
@@ -121,7 +151,7 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
 
   router.get('/businesses', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
       const params = outreachQuerySchema.parse(req.query)
       const result = await outreachService.listBusinesses(orgId, params)
       res.json({ success: true, data: result })
@@ -137,7 +167,7 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
 
   router.get('/businesses/:id', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
       const result = await outreachService.getBusiness(req.params.id, orgId)
       res.json({ success: true, data: result })
     } catch (error: unknown) {
@@ -153,7 +183,7 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
 
   router.get('/businesses/:id/traceability', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
       const trace = await outreachService.getTraceability(req.params.id)
       res.json({ success: true, data: trace })
     } catch (error: unknown) {
@@ -169,13 +199,14 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
 
   router.post('/campaigns/:id/outreach', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
+      const userId = req.outreachApiKey ? undefined : getAuth(req).userId
       const { businesses } = req.body
       if (!Array.isArray(businesses)) {
         res.status(400).json({ success: false, error: 'businesses array is required' })
         return
       }
-      const result = await outreachService.submitToCampaign(req.params.id, businesses, orgId, getAuth(req).userId)
+      const result = await outreachService.submitToCampaign(req.params.id, businesses, orgId, userId)
       res.status(result.success ? 201 : 422).json({ success: result.success, data: result })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error'
@@ -185,7 +216,7 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
 
   router.get('/api-keys', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
       const keys = await outreachService.apiKeyService.list(orgId)
       res.json({ success: true, data: keys })
     } catch (error: unknown) {
@@ -196,13 +227,14 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
 
   router.post('/api-keys', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
+      const userId = req.outreachApiKey ? undefined : getAuth(req).userId
       const parsed = createApiKeySchema.safeParse(req.body)
       if (!parsed.success) {
         res.status(400).json({ success: false, error: 'Invalid input', details: parsed.error.issues })
         return
       }
-      const key = await outreachService.apiKeyService.create(parsed.data, orgId, getAuth(req).userId)
+      const key = await outreachService.apiKeyService.create(parsed.data, orgId, userId)
       res.status(201).json({ success: true, data: key })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error'
@@ -212,7 +244,7 @@ export function createOutreachModuleRoutes(config: AppConfig, logger: Logger) {
 
   router.delete('/api-keys/:id', async (req, res) => {
     try {
-      const orgId = await getOrgId(getAuth(req).userId)
+      const orgId = getOrgIdFromReq(req)
       await outreachService.apiKeyService.revoke(req.params.id, orgId)
       res.json({ success: true, data: { revoked: true } })
     } catch (error: unknown) {
