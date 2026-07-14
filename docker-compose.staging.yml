@@ -1,0 +1,252 @@
+# =============================================================================
+# Conversation Platform - Staging Environment
+# =============================================================================
+# Start: docker compose -f docker-compose.staging.yml up -d
+# Stop:  docker compose -f docker-compose.staging.yml down
+# Logs:  docker compose -f docker-compose.staging.yml logs -f
+# =============================================================================
+
+name: conversation-platform-staging
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+
+x-healthcheck: &default-healthcheck
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+
+services:
+  # ── Database ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: cp-staging-postgres
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-cp_user} -d ${POSTGRES_DB:-conversation_platform}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cp_staging_password}
+      POSTGRES_DB: ${POSTGRES_DB:-conversation_platform}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '127.0.0.1:5432:5432'
+    networks:
+      - conversation-platform
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: cp-staging-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-cp_staging_redis}
+    volumes:
+      - redis-data:/data
+    ports:
+      - '127.0.0.1:6379:6379'
+    networks:
+      - conversation-platform
+
+  # ── API Server ──────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: production
+      args:
+        - NODE_ENV=production
+    container_name: cp-staging-api
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3001/health']
+      <<: *default-healthcheck
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cp_user}:${POSTGRES_PASSWORD:-cp_staging_password}@postgres:5432/${POSTGRES_DB:-conversation_platform}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-cp_staging_redis}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      WHATSAPP_API_KEY: ${WHATSAPP_API_KEY}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
+      WHATSAPP_BUSINESS_ACCOUNT_ID: ${WHATSAPP_BUSINESS_ACCOUNT_ID}
+      WHATSAPP_API_VERSION: ${WHATSAPP_API_VERSION:-v21.0}
+      WHATSAPP_WEBHOOK_VERIFY_TOKEN: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
+    ports:
+      - '${API_PORT:-3001}:3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging: *default-logging
+    networks:
+      - conversation-platform
+
+  # ── Worker ───────────────────────────────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: production
+      args:
+        - NODE_ENV=production
+    container_name: cp-staging-worker
+    restart: unless-stopped
+    command: node dist/worker.js
+    healthcheck:
+      test: ['CMD', 'node', '-e', "process.exit(0)"]
+      <<: *default-healthcheck
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cp_user}:${POSTGRES_PASSWORD:-cp_staging_password}@postgres:5432/${POSTGRES_DB:-conversation_platform}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-cp_staging_redis}@redis:6379
+      WHATSAPP_API_KEY: ${WHATSAPP_API_KEY}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
+      WHATSAPP_BUSINESS_ACCOUNT_ID: ${WHATSAPP_BUSINESS_ACCOUNT_ID}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging: *default-logging
+    networks:
+      - conversation-platform
+
+  # ── Dashboard ────────────────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+      target: production
+      args:
+        - NODE_ENV=production
+    container_name: cp-staging-dashboard
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000']
+      <<: *default-healthcheck
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    ports:
+      - '${DASHBOARD_PORT:-3000}:3000'
+    depends_on:
+      - api
+    logging: *default-logging
+    networks:
+      - conversation-platform
+
+  # ── Monitoring ──────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.53
+    container_name: cp-staging-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+    ports:
+      - '127.0.0.1:9090:9090'
+    logging: *default-logging
+    networks:
+      - conversation-platform
+
+  grafana:
+    image: grafana/grafana:11.1
+    container_name: cp-staging-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-staging_grafana}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+    volumes:
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - grafana-data:/var/lib/grafana
+    ports:
+      - '127.0.0.1:3002:3000'
+    depends_on:
+      - prometheus
+    logging: *default-logging
+    networks:
+      - conversation-platform
+
+  loki:
+    image: grafana/loki:3.1
+    container_name: cp-staging-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    ports:
+      - '127.0.0.1:3100:3100'
+    logging: *default-logging
+    networks:
+      - conversation-platform
+
+  # ── Scheduler ──────────────────────────────────────────────────────────
+  scheduler:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: production
+      args:
+        - NODE_ENV=production
+    container_name: cp-staging-scheduler
+    restart: unless-stopped
+    command: node dist/worker.js --scheduler
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cp_user}:${POSTGRES_PASSWORD:-cp_staging_password}@postgres:5432/${POSTGRES_DB:-conversation_platform}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-cp_staging_redis}@redis:6379
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging: *default-logging
+    networks:
+      - conversation-platform
+
+volumes:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  loki-data:
+
+networks:
+  conversation-platform:
+    name: conversation-platform-staging
+    driver: bridge

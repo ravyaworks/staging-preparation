@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   transpilePackages: ['@conversation-platform/ui'],
   experimental: {
     optimizePackageImports: ['lucide-react'],
