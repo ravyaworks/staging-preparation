@@ -64,6 +64,7 @@ export default defineConfig({
       '@conversation-platform/outreach-integration': path.resolve(__dirname, 'packages/outreach-integration/src'),
       '@conversation-platform/audit': path.resolve(__dirname, 'packages/audit/src'),
       '@conversation-platform/delivery-tracking': path.resolve(__dirname, 'packages/delivery-tracking/src'),
+      '@conversation-platform/whatsapp': path.resolve(__dirname, 'packages/whatsapp/src'),
       '@conversation-platform/channel-core': path.resolve(__dirname, 'packages/channel-core/src'),
       '@conversation-platform/webhook-service': path.resolve(__dirname, 'services/webhook-service/src'),
       '@conversation-platform/channel-service': path.resolve(__dirname, 'services/channel-service/src'),

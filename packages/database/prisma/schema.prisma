@@ -36,6 +36,7 @@ model Tenant {
   conversations Conversation[]
   outreachApiKeys OutreachApiKey[]
   featureFlags   FeatureFlag[]
+  messages       Message[]
 
   @@map("tenants")
 }
@@ -413,6 +414,7 @@ model Contact {
   tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   conversations Conversation[]
+  messages       Message[]
 
   @@index([tenantId])
   @@index([phone])

@@ -47,7 +47,12 @@ export function createApp(config: AppConfig, logger: Logger): express.Express {
   app.use(compression());
   app.use(helmet());
   app.use(cors({ origin: config.cors.origins, methods: config.cors.methods }));
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({
+    limit: '1mb',
+    verify: (req: express.Request, _res: express.Response, buf: Buffer) => {
+      (req as any).rawBody = buf.toString('utf8');
+    },
+  }));
   app.use(express.urlencoded({ extended: true }));
 
   app.use(requestId);

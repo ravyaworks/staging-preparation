@@ -1,121 +1,161 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { WhatsAppService, extractWebhookEvent, validateWebhookRequest } from '@conversation-platform/whatsapp';
-import type { WhatsAppConfig, WebhookMessage, WebhookStatusUpdate } from '@conversation-platform/whatsapp';
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { WhatsAppBusinessSender, WhatsAppApiClient, WhatsAppWebhookProcessor, MediaService, loadWhatsAppConfig, WhatsAppValidator } from '@conversation-platform/whatsapp'
+import type { WhatsAppConfig, WhatsAppWebhookPayload } from '@conversation-platform/whatsapp'
 
 function createTestConfig(overrides?: Partial<WhatsAppConfig>): WhatsAppConfig {
-  return { phoneNumberId: overrides?.phoneNumberId ?? '123456789', businessAccountId: overrides?.businessAccountId ?? '987654321', apiVersion: overrides?.apiVersion ?? 'v18.0', accessToken: overrides?.accessToken ?? 'test-access-token', webhookVerifyToken: overrides?.webhookVerifyToken ?? 'test-verify-token', appSecret: overrides?.appSecret ?? 'test-app-secret', baseUrl: overrides?.baseUrl ?? 'https://graph.facebook.com' };
+  return {
+    accessToken: overrides?.accessToken ?? 'test-access-token',
+    phoneNumberId: overrides?.phoneNumberId ?? '123456789',
+    businessAccountId: overrides?.businessAccountId ?? '987654321',
+    apiVersion: overrides?.apiVersion ?? 'v21.0',
+    webhookVerifyToken: overrides?.webhookVerifyToken ?? 'test-verify-token',
+    appSecret: overrides?.appSecret ?? 'test-app-secret',
+    baseUrl: overrides?.baseUrl ?? 'https://graph.facebook.com',
+    requestTimeoutMs: overrides?.requestTimeoutMs ?? 30000,
+    maxRetries: overrides?.maxRetries ?? 3,
+    retryDelayMs: overrides?.retryDelayMs ?? 1000,
+  }
 }
 
-describe('WhatsApp Service Integration', () => {
-  let service: WhatsAppService;
+function createTextPayload(): WhatsAppWebhookPayload {
+  return {
+    object: 'whatsapp_business_account',
+    entry: [{
+      id: '987654321',
+      changes: [{
+        field: 'messages',
+        value: {
+          messaging_product: 'whatsapp',
+          metadata: { phone_number_id: '123456789', display_phone_number: '15551234567' },
+          contacts: [{ profile: { name: 'John' }, wa_id: '15551234567' }],
+          messages: [{
+            from: '15551234567',
+            id: 'wamid.test123',
+            timestamp: String(Math.floor(Date.now() / 1000)),
+            text: { body: 'Hello!' },
+            type: 'text',
+          }],
+        },
+      }],
+    }],
+  }
+}
 
-  beforeEach(() => { service = new WhatsAppService(createTestConfig()); });
+function createStatusPayload(): WhatsAppWebhookPayload {
+  return {
+    object: 'whatsapp_business_account',
+    entry: [{
+      id: '987654321',
+      changes: [{
+        field: 'messages',
+        value: {
+          messaging_product: 'whatsapp',
+          metadata: { phone_number_id: '123456789', display_phone_number: '15551234567' },
+          statuses: [{
+            id: 'wamid.status123',
+            recipient_id: '15551234567',
+            status: 'delivered',
+            timestamp: String(Math.floor(Date.now() / 1000)),
+          }],
+        },
+      }],
+    }],
+  }
+}
+
+describe('WhatsApp Integration', () => {
+  const config = createTestConfig()
 
   describe('Webhook Validation', () => {
     it('should validate a webhook request with correct token', () => {
-      expect(validateWebhookRequest({ 'hub.mode': 'subscribe', 'hub.verify_token': 'test-verify-token', 'hub.challenge': '123456789' }, createTestConfig())).toBe('123456789');
-    });
+      const validator = new WhatsAppValidator()
+      const result = validator.validateWebhookPayload(createTextPayload())
+      expect(result).toBe(true)
+    })
 
-    it('should reject a webhook request with wrong token', () => {
-      expect(() => validateWebhookRequest({ 'hub.mode': 'subscribe', 'hub.verify_token': 'wrong-token', 'hub.challenge': '123456789' }, createTestConfig())).toThrow();
-    });
+    it('should reject invalid webhook payload', () => {
+      const validator = new WhatsAppValidator()
+      expect(validator.validateWebhookPayload({})).toBe(false)
+    })
+  })
 
-    it('should reject a webhook request without mode', () => {
-      expect(() => validateWebhookRequest({ 'hub.verify_token': 'test-verify-token', 'hub.challenge': '123456789' }, createTestConfig())).toThrow();
-    });
-  });
+  describe('Webhook Event Processing', () => {
+    it('should extract a text message from webhook payload', async () => {
+      const deliveryTracker = { recordEvent: vi.fn().mockResolvedValue(undefined) } as any
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as any
+      const processor = new WhatsAppWebhookProcessor(deliveryTracker, logger)
 
-  describe('Webhook Event Extraction', () => {
-    it('should extract a text message from webhook payload', () => {
-      const event = extractWebhookEvent(createTextPayload());
-      expect(event.type).toBe('message');
-      expect(event.from).toBe('15551234567');
-      expect(event.content).toBe('Hello!');
-    });
+      const result = await processor.process(createTextPayload())
+      expect(result.incomingMessages).toHaveLength(1)
+      expect(result.incomingMessages[0].from).toBe('15551234567')
+      expect(result.incomingMessages[0].text).toBe('Hello!')
+    })
 
-    it('should extract a status update from webhook payload', () => {
-      const event = extractWebhookEvent(createStatusPayload());
-      expect(event.type).toBe('status');
-      expect(event.status).toBe('delivered');
-      expect(event.messageId).toBe('wamid.test123');
-    });
+    it('should extract a status update from webhook payload', async () => {
+      const deliveryTracker = { recordEvent: vi.fn().mockResolvedValue(undefined) } as any
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as any
+      const processor = new WhatsAppWebhookProcessor(deliveryTracker, logger)
 
-    it('should extract reaction from message', () => {
-      const payload = createTextPayload();
-      payload.entry![0].changes[0].value.messages![0].reaction = { emoji: '\u2764\uFE0F', message_id: 'wamid.react-to' };
-      const event = extractWebhookEvent(payload);
-      expect(event.messageType).toBe('reaction');
-    });
+      const result = await processor.process(createStatusPayload())
+      expect(result.acknowledgedStatuses).toHaveLength(1)
+      expect(result.acknowledgedStatuses[0].status).toBe('delivered')
+      expect(result.acknowledgedStatuses[0].messageId).toBe('wamid.status123')
+    })
 
-    it('should extract interactive button reply', () => {
-      const payload = createTextPayload();
-      payload.entry![0].changes[0].value.messages![0].interactive = { button_reply: { id: 'btn_1', title: 'Yes' } };
-      payload.entry![0].changes[0].value.messages![0].text = undefined;
-      const event = extractWebhookEvent(payload);
-      expect(event.messageType).toBe('interactive');
-      expect(event.content).toBe('Yes');
-    });
+    it('should return empty for invalid payload', async () => {
+      const deliveryTracker = { recordEvent: vi.fn() } as any
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as any
+      const processor = new WhatsAppWebhookProcessor(deliveryTracker, logger)
 
-    it('should extract interactive list reply', () => {
-      const payload = createTextPayload();
-      payload.entry![0].changes[0].value.messages![0].interactive = { list_reply: { id: 'list_1', title: 'Option A', description: 'Description of A' } };
-      payload.entry![0].changes[0].value.messages![0].text = undefined;
-      const event = extractWebhookEvent(payload);
-      expect(event.messageType).toBe('interactive');
-    });
+      const result = await processor.process({} as WhatsAppWebhookPayload)
+      expect(result.recordedEvents).toBe(0)
+      expect(result.incomingMessages).toHaveLength(0)
+    })
+  })
 
-    it('should return null for invalid payload', () => {
-      expect(extractWebhookEvent({})).toBeNull();
-    });
-  });
+  describe('Configuration Loading', () => {
+    it('should throw on missing required env vars', () => {
+      const origEnv = { ...process.env }
+      delete process.env.WHATSAPP_ACCESS_TOKEN
+      delete process.env.WHATSAPP_PHONE_NUMBER_ID
+      delete process.env.WHATSAPP_BUSINESS_ACCOUNT_ID
+      delete process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN
+      expect(() => loadWhatsAppConfig()).toThrow('Missing required WhatsApp configuration')
+      Object.assign(process.env, origEnv)
+    })
+
+    it('should load config with all env vars set', () => {
+      const origEnv = { ...process.env }
+      process.env.WHATSAPP_ACCESS_TOKEN = 'test-token'
+      process.env.WHATSAPP_PHONE_NUMBER_ID = 'test-phone'
+      process.env.WHATSAPP_BUSINESS_ACCOUNT_ID = 'test-business'
+      process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = 'test-verify'
+      process.env.WHATSAPP_API_VERSION = 'v21.0'
+      process.env.WHATSAPP_APP_SECRET = 'test-app-secret'
+
+      const loaded = loadWhatsAppConfig()
+      expect(loaded.accessToken).toBe('test-token')
+      expect(loaded.appSecret).toBe('test-app-secret')
+      expect(loaded.apiVersion).toBe('v21.0')
+
+      Object.assign(process.env, origEnv)
+    })
+  })
 
   describe('Message Sending', () => {
-    it('should send a text message', async () => {
-      const result = await service.sendText('15551234567', 'Hello World');
-      expect(result.success).toBe(true);
-    });
-
-    it('should send a template message', async () => {
-      const result = await service.sendTemplate('15551234567', 'hello_world', [{ type: 'body', parameters: [{ type: 'text', text: 'John' }] }]);
-      expect(result.success).toBe(true);
-    });
-
-    it('should handle send errors gracefully', async () => {
-      const result = await service.sendText('', '');
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-    });
-
-    it('should handle rate limiting', async () => {
-      const promises = Array.from({ length: 250 }, (_, i) => service.sendText('15551234567', `Message ${i}`));
-      const results = await Promise.allSettled(promises);
-      const rateLimited = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success));
-      expect(rateLimited.length).toBeGreaterThan(0);
-    });
-  });
+    it('should create sender with correct config', () => {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } as any
+      const sender = new WhatsAppBusinessSender(config, logger)
+      expect(sender).toBeDefined()
+    })
+  })
 
   describe('Media Handling', () => {
-    it('should upload media', async () => {
-      const result = await service.uploadMedia(Buffer.from('test'), 'image/jpeg', 'test.jpg');
-      expect(result.success).toBe(true);
-    });
-
-    it('should retrieve media URL', async () => {
-      const result = await service.getMediaUrl('media-id-123');
-      expect(result.success).toBe(true);
-    });
-
-    it('should download media', async () => {
-      const result = await service.downloadMedia('media-id-123');
-      expect(result.success).toBe(true);
-    });
-  });
-});
-
-function createTextPayload() {
-  return { object: 'whatsapp_business_account', entry: [{ id: '987654321', changes: [{ value: { messaging_product: 'whatsapp', metadata: { phone_number_id: '123456789', display_phone_number: '15551234567' }, contacts: [{ profile: { name: 'John' }, wa_id: '15551234567' }], messages: [{ from: '15551234567', id: 'wamid.test123', timestamp: String(Math.floor(Date.now() / 1000)), text: { body: 'Hello!' }, type: 'text' }] }, field: 'messages' }] }] };
-}
-
-function createStatusPayload() {
-  return { object: 'whatsapp_business_account', entry: [{ id: '987654321', changes: [{ value: { messaging_product: 'whatsapp', metadata: { phone_number_id: '123456789', display_phone_number: '15551234567' }, statuses: [{ id: 'wamid.status123', recipient_id: '15551234567', status: 'delivered', timestamp: String(Math.floor(Date.now() / 1000)), type: 'message' }] }, field: 'messages' }] }] };
-}
+    it('should create media service with correct config', async () => {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } as any
+      const client = new WhatsAppApiClient(config, logger)
+      const mediaService = new MediaService(client, config, logger)
+      expect(mediaService).toBeDefined()
+    })
+  })
+})

@@ -7,6 +7,7 @@ export interface WhatsAppConfig {
   apiVersion: WhatsAppApiVersion
   baseUrl?: string
   webhookVerifyToken: string
+  appSecret?: string
   requestTimeoutMs: number
   maxRetries: number
   retryDelayMs: number

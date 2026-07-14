@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import type { Request, Response } from 'express'
 import type { Logger } from '@conversation-platform/logger'
 import type { DeliveryTracker } from '@conversation-platform/delivery-tracking'
@@ -6,6 +7,16 @@ import { WhatsAppApiClient } from '../client/whatsapp-api-client'
 import { WhatsAppAuth } from '../auth/whatsapp-auth'
 import { WhatsAppValidator } from '../validation/whatsapp-validator'
 import { WhatsAppWebhookProcessor } from './webhook-processor'
+
+function verifyRequestSignature(appSecret: string, body: string, signatureHeader: string | undefined): boolean {
+  if (!signatureHeader) return false
+  const expected = crypto.createHmac('sha256', appSecret).update(body, 'utf8').digest('hex')
+  const prefix = 'sha256='
+  if (!signatureHeader.startsWith(prefix)) return false
+  const received = signatureHeader.slice(prefix.length)
+  if (expected.length !== received.length) return false
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(received))
+}
 
 export function createWebhookRouter(
   config: WhatsAppConfig,
@@ -39,6 +50,16 @@ export function createWebhookRouter(
     },
 
     handleNotification: async (req: Request, res: Response): Promise<void> => {
+      if (config.appSecret) {
+        const rawBody = (req as any).rawBody ?? JSON.stringify(req.body)
+        const signature = req.headers['x-hub-signature-256'] as string | undefined
+        if (!verifyRequestSignature(config.appSecret, rawBody, signature)) {
+          logger.warn('Webhook request signature verification failed')
+          res.status(403).json({ error: 'Invalid signature' })
+          return
+        }
+      }
+
       if (!validator.validateWebhookPayload(req.body)) {
         logger.warn('Invalid webhook payload received')
         res.status(400).json({ error: 'Invalid payload' })

@@ -26,6 +26,7 @@ export function loadWhatsAppConfig(): WhatsAppConfig {
     apiVersion: (process.env.WHATSAPP_API_VERSION as WhatsAppApiVersion) ?? DEFAULT_API_VERSION,
     baseUrl: process.env.WHATSAPP_BASE_URL ?? DEFAULT_BASE_URL,
     webhookVerifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN!,
+    appSecret: process.env.WHATSAPP_APP_SECRET,
     requestTimeoutMs: parseInt(process.env.WHATSAPP_REQUEST_TIMEOUT_MS ?? String(DEFAULT_TIMEOUT_MS), 10),
     maxRetries: parseInt(process.env.WHATSAPP_MAX_RETRIES ?? String(DEFAULT_MAX_RETRIES), 10),
     retryDelayMs: parseInt(process.env.WHATSAPP_RETRY_DELAY_MS ?? String(DEFAULT_RETRY_DELAY_MS), 10),
