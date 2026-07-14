@@ -1,0 +1,17 @@
+node_modules
+dist
+.next
+out
+coverage
+.git
+.gitignore
+.env
+.env.*
+*.md
+.DS_Store
+*.log
+.turbo
+tsconfig.tsbuildinfo
+tests
+docs
+__tests__
