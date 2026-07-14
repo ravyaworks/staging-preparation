@@ -105,6 +105,98 @@ export class InMemoryQueueAdapter implements QueueAdapter {
   }
 }
 
+export class BullMQQueueAdapter implements QueueAdapter {
+  private queues: Map<string, import('bullmq').Queue> = new Map()
+  private workers: Map<string, import('bullmq').Worker> = new Map()
+  private connection: import('ioredis').Redis
+  private prefix: string
+
+  constructor(redisUrl: string, prefix = 'cp:queue:') {
+    this.connection = new (require('ioredis').Redis)(redisUrl, { maxRetriesPerRequest: null })
+    this.prefix = prefix
+  }
+
+  async enqueue<T>(type: string, payload: T, options?: { priority?: JobPriority; delay?: number; maxAttempts?: number }): Promise<string> {
+    const { Queue: BullQueue } = require('bullmq')
+    const queueName = `${this.prefix}${type}`
+    if (!this.queues.has(queueName)) {
+      const q = new BullQueue(queueName, { connection: this.connection })
+      this.queues.set(queueName, q)
+    }
+    const queue = this.queues.get(queueName)!
+    const job = await queue.add(type, payload as Record<string, unknown>, {
+      priority: options?.priority === 'critical' ? 1 : options?.priority === 'high' ? 2 : options?.priority === 'normal' ? 3 : 4,
+      delay: options?.delay,
+      attempts: options?.maxAttempts ?? 3,
+    })
+    return job.id ?? crypto.randomUUID()
+  }
+
+  async dequeue<T>(_queueName: string): Promise<Job<T> | null> {
+    return null
+  }
+
+  async complete(jobId: string): Promise<void> {
+    const { Job: BullJob } = require('bullmq')
+    const job = await BullJob.fromId(this.connection, jobId)
+    if (job) {
+      await job.remove()
+    }
+  }
+
+  async fail(jobId: string, error: string): Promise<void> {
+    const { Job: BullJob } = require('bullmq')
+    const job = await BullJob.fromId(this.connection, jobId)
+    if (job) {
+      await job.log(error)
+    }
+  }
+
+  async retry(jobId: string): Promise<void> {
+    const { Job: BullJob } = require('bullmq')
+    const job = await BullJob.fromId(this.connection, jobId)
+    if (job) {
+      await job.retry()
+    }
+  }
+
+  async getStatus(jobId: string): Promise<JobStatus | null> {
+    const { Job: BullJob } = require('bullmq')
+    const job = await BullJob.fromId(this.connection, jobId)
+    if (!job) return null
+    const state = await job.getState()
+    switch (state) {
+      case 'waiting': case 'paused': case 'delayed': return 'pending'
+      case 'active': return 'processing'
+      case 'completed': return 'completed'
+      case 'failed': return 'failed'
+      default: return 'pending'
+    }
+  }
+
+  async getStats(): Promise<{ pending: number; processing: number; failed: number; completed: number }> {
+    let pending = 0, processing = 0, failed = 0, completed = 0
+    for (const queue of this.queues.values()) {
+      const counts = await queue.getJobCounts('waiting', 'active', 'failed', 'completed', 'delayed', 'paused')
+      pending += (counts.waiting ?? 0) + (counts.delayed ?? 0) + (counts.paused ?? 0)
+      processing += counts.active ?? 0
+      failed += counts.failed ?? 0
+      completed += counts.completed ?? 0
+    }
+    return { pending, processing, failed, completed }
+  }
+
+  async disconnect(): Promise<void> {
+    for (const worker of this.workers.values()) {
+      await worker.close()
+    }
+    for (const queue of this.queues.values()) {
+      await queue.close()
+    }
+    this.connection.disconnect()
+  }
+}
+
 export class QueueServiceImplementation implements QueueService {
   private handlers: Map<string, JobHandler> = new Map();
   private processing = false;

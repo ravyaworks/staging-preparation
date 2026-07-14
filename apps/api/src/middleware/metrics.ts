@@ -44,6 +44,30 @@ export function getMetrics() {
   return summary;
 }
 
+export function metricsCounter(name: string, value: number, labels?: Record<string, string>): void {
+  if (process.env.NODE_ENV === 'development') {
+    const labelStr = labels ? ` ${JSON.stringify(labels)}` : ''
+    console.debug(`[metrics] counter ${name} += ${value}${labelStr}`)
+  }
+  const key = `counter:${name}:${labels ? JSON.stringify(labels) : ''}`
+  if (!requestCounts.has(key)) {
+    requestCounts.set(key, { count: 0, startTime: Date.now() })
+  }
+  requestCounts.get(key)!.count += value
+}
+
+export function metricsHistogram(name: string, value: number, labels?: Record<string, string>): void {
+  if (process.env.NODE_ENV === 'development') {
+    const labelStr = labels ? ` ${JSON.stringify(labels)}` : ''
+    console.debug(`[metrics] histogram ${name} = ${value}ms${labelStr}`)
+  }
+  const key = `histogram:${name}:${labels ? JSON.stringify(labels) : ''}`
+  if (!requestCounts.has(key)) {
+    requestCounts.set(key, { count: 0, startTime: Date.now() })
+  }
+  requestCounts.get(key)!.count++
+}
+
 export function resetMetrics(): void {
   requestCounts.clear();
 }

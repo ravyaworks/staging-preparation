@@ -1,0 +1,42 @@
+name: 'Generate Release Notes'
+description: 'Generate release notes from CHANGELOG.md for the current tag'
+
+inputs:
+  tag:
+    description: 'Git tag to generate notes for'
+    required: true
+
+outputs:
+  release-notes:
+    description: 'Generated release notes'
+    value: ${{ steps.extract.outputs.notes }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: extract
+      shell: bash
+      run: |
+        TAG="${{ inputs.tag }}"
+        CHANGELOG="CHANGELOG.md"
+        if [ ! -f "$CHANGELOG" ]; then
+          echo "notes=Release $TAG" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        VERSION="${TAG#v}"
+        NOTES=$(awk -v ver="$VERSION" '
+          /^## / {
+            if (found) exit
+            if ($0 ~ ver) found=1
+            next
+          }
+          found { print }
+        ' "$CHANGELOG")
+        if [ -z "$NOTES" ]; then
+          echo "notes=Release $TAG" >> "$GITHUB_OUTPUT"
+        else
+          EOF=$(dd if=/dev/urandom bs=64 count=1 2>/dev/null | base64 | tr -d '\n')
+          echo "notes<<$EOF" >> "$GITHUB_OUTPUT"
+          echo "$NOTES" >> "$GITHUB_OUTPUT"
+          echo "$EOF" >> "$GITHUB_OUTPUT"
+        fi

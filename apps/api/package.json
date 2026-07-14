@@ -26,6 +26,7 @@
     "@conversation-platform/plugin-framework": "workspace:*",
     "@conversation-platform/tool-engine": "workspace:*",
     "@conversation-platform/tools": "workspace:*",
+    "@conversation-platform/whatsapp": "workspace:*",
     "@conversation-platform/workflow-engine": "workspace:*",
     "compression": "^1.7.4",
     "express": "^4.18.0",

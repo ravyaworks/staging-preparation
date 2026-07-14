@@ -1,0 +1,24 @@
+{
+  "name": "@conversation-platform/notification-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Notification service for multi-channel notifications",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@conversation-platform/types": "workspace:*",
+    "@conversation-platform/logger": "workspace:*",
+    "@conversation-platform/config": "workspace:*",
+    "@conversation-platform/queue": "workspace:*"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

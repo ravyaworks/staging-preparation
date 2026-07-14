@@ -11,6 +11,7 @@ import { requestId } from './middleware/request-id';
 import { metricsMiddleware } from './middleware/metrics';
 import { csrfProtection } from './middleware/csrf';
 import { apiLimiter, authLimiter } from './middleware/rate-limit';
+import { authenticate } from '@conversation-platform/auth';
 import swaggerUi from 'swagger-ui-express';
 import { spec } from './routes/docs.routes';
 
@@ -68,18 +69,26 @@ export function createApp(config: AppConfig, logger: Logger): express.Express {
   app.use('/api/v1/auth', createAuthRoutes(config, logger));
   app.use('/api/v1/tenants', createTenantRoutes(config));
 
-  app.use('/api/v1/knowledge', knowledgeRoutes);
-  app.use('/api/v1/workflows', workflowRoutes);
-  app.use('/api/v1/tools', toolRoutes);
-  app.use('/api/v1/plugins', pluginRoutes);
-  app.use('/api/v1/analytics', analyticsRoutes);
-  app.use('/api/v1/notifications', notificationRoutes);
-  app.use('/api/v1/audit', auditRoutes);
-  app.use('/api/v1/channels', channelsRoutes);
+  const requireAuth = authenticate({
+    secret: config.auth.jwtSecret,
+    expiresIn: 900,
+    refreshSecret: config.auth.refreshSecret,
+    refreshExpiresIn: 604800,
+    issuer: config.auth.issuer,
+  });
+
+  app.use('/api/v1/knowledge', requireAuth, knowledgeRoutes);
+  app.use('/api/v1/workflows', requireAuth, workflowRoutes);
+  app.use('/api/v1/tools', requireAuth, toolRoutes);
+  app.use('/api/v1/plugins', requireAuth, pluginRoutes);
+  app.use('/api/v1/analytics', requireAuth, analyticsRoutes);
+  app.use('/api/v1/notifications', requireAuth, notificationRoutes);
+  app.use('/api/v1/audit', requireAuth, auditRoutes);
+  app.use('/api/v1/channels', requireAuth, channelsRoutes);
   app.use('/api/v1/webhooks', webhooksRoutes);
-  app.use('/api/v1/integrations', integrationsRoutes);
-  app.use('/api/v1/messages', messagesRoutes);
-  app.use('/api/v1/events', eventsRoutes);
+  app.use('/api/v1/integrations', requireAuth, integrationsRoutes);
+  app.use('/api/v1/messages', requireAuth, messagesRoutes);
+  app.use('/api/v1/events', requireAuth, eventsRoutes);
   app.use('/api/v1/widgets', widgetRoutes);
 
   app.use('/api/v1/outreach', createOutreachModuleRoutes(config, logger));

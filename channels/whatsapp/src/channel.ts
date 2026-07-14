@@ -88,18 +88,76 @@ export class WhatsAppChannel implements ChannelInterface {
 
     this.checkRateLimit()
 
+    const url = `https://graph.facebook.com/${this.config.apiVersion}/${this.config.phoneNumberId}/messages`
+    let payload: Record<string, unknown>
+
+    const msgType = message.type as string
+    switch (msgType) {
+      case 'text':
+        payload = this.buildTextPayload(message)
+        break
+      case 'image':
+      case 'document':
+      case 'audio':
+      case 'video':
+        payload = this.buildMediaPayload(message)
+        break
+      case 'interactive':
+      case 'button':
+      case 'quick_reply':
+        payload = this.buildInteractivePayload(message)
+        break
+      case 'location':
+        payload = this.buildLocationPayload(message)
+        break
+      case 'contact':
+        payload = this.buildContactPayload(message)
+        break
+      case 'template':
+        payload = this.buildTemplatePayload(message)
+        break
+      default:
+        payload = this.buildTextPayload(message)
+    }
+
+    let response: Response
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10000),
+      })
+    } catch (error) {
+      throw new ChannelMessageError(
+        `Failed to send WhatsApp message: ${error instanceof Error ? error.message : 'Network error'}`,
+        'whatsapp',
+      )
+    }
+
+    if (!response.ok) {
+      const body = await response.text()
+      this.handleApiError(response.status, body)
+    }
+
+    const result = await response.json() as { messages?: Array<{ id: string }> }
+    const waMessageId = result.messages?.[0]?.id ?? message.id
+
     if (this.eventHandler) {
       await this.eventHandler({
         id: crypto.randomUUID(),
         channelType: 'whatsapp',
         type: 'message_sent',
-        payload: { messageId: message.id },
+        payload: { messageId: waMessageId, waMessageId },
         timestamp: new Date().toISOString(),
         tenantId: message.tenant.id,
       })
     }
 
-    return message.id
+    return waMessageId
   }
 
   async sendTypingIndicator(conversationId: string, _isTyping: boolean, tenantId: string): Promise<void> {

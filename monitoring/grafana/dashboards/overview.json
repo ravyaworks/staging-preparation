@@ -1,0 +1,20 @@
+{
+  "title": "Conversation Platform Overview",
+  "uid": "cp-overview",
+  "version": 1,
+  "schemaVersion": 39,
+  "panels": [
+    {
+      "title": "API Requests",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [{ "expr": "rate(http_requests_total[5m])", "legendFormat": "{{method}} {{path}}" }]
+    },
+    {
+      "title": "Error Rate",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [{ "expr": "rate(http_requests_total{status=~\"5..\"}[5m])", "legendFormat": "5xx" }]
+    }
+  ]
+}

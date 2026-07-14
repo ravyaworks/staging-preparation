@@ -4,7 +4,20 @@ import type { RequestContext } from '@conversation-platform/types'
 import type { DiscordChannelConfig, DiscordInteraction, DiscordMessage } from './types'
 
 function verifyDiscordSignature(publicKey: string, body: string, signature: string, timestamp: string): boolean {
-  return signature.length > 0 && timestamp.length > 0
+  try {
+    const crypto = require('crypto')
+    const publicKeyRaw = Buffer.from(publicKey, 'hex')
+    const derKey = Buffer.concat([
+      Buffer.from('302a300506032b6570032100', 'hex'),
+      publicKeyRaw,
+    ])
+    const keyObject = crypto.createPublicKey({ key: derKey, format: 'der', type: 'spki' })
+    const verify = crypto.createVerify('ed25519')
+    verify.update(timestamp + body)
+    return verify.verify(keyObject, Buffer.from(signature, 'hex'))
+  } catch {
+    return false
+  }
 }
 
 export class DiscordChannel implements ChannelInterface {

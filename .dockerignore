@@ -12,3 +12,6 @@ coverage
 *.log
 .turbo
 tsconfig.tsbuildinfo
+tests
+docs
+__tests__

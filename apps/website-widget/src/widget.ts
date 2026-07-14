@@ -47,7 +47,7 @@ class ConversationWidget {
       allowFileUpload: false,
       ...config,
     };
-    this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.sessionId = `session_${crypto.randomUUID().replace(/-/g, '')}`;
     this.container = this.createContainer();
     this.connectWebSocket();
     this.loadMessages();
@@ -134,8 +134,15 @@ class ConversationWidget {
       justify-content: space-between;
       align-items: center;
     `;
-    header.innerHTML = `<strong>${this.config.greetingMessage}</strong>
-      <button id="cp-widget-close" style="background:none;border:none;color:white;cursor:pointer;font-size:20px;">&times;</button>`;
+    const title = document.createElement('strong')
+    title.textContent = this.config.greetingMessage
+    header.appendChild(title)
+    const closeBtn = document.createElement('button')
+    closeBtn.id = 'cp-widget-close'
+    closeBtn.style.cssText = 'background:none;border:none;color:white;cursor:pointer;font-size:20px;'
+    closeBtn.textContent = '\u00D7'
+    closeBtn.onclick = () => this.close()
+    header.appendChild(closeBtn)
     header.querySelector('#cp-widget-close')!.onclick = () => this.close();
 
     const messages = document.createElement('div');
@@ -306,8 +313,10 @@ class ConversationWidget {
     const container = document.getElementById('cp-widget-messages');
     if (!container) return;
 
-    container.innerHTML = this.messages.map(m => `
-      <div style="
+    container.textContent = ''
+    for (const m of this.messages) {
+      const div = document.createElement('div')
+      div.style.cssText = `
         align-self: ${m.role === 'user' ? 'flex-end' : 'flex-start'};
         background: ${m.role === 'user' ? this.config.primaryColor : (this.config.darkMode ? '#333' : '#f0f0f0')};
         color: ${m.role === 'user' ? 'white' : (this.config.darkMode ? '#e0e0e0' : '#1a1a1a')};
@@ -318,8 +327,10 @@ class ConversationWidget {
         word-wrap: break-word;
         font-size: 14px;
         line-height: 1.4;
-      ">${m.content}</div>
-    `).join('');
+      `
+      div.textContent = m.content
+      container.appendChild(div)
+    }
 
     container.scrollTop = container.scrollHeight;
   }

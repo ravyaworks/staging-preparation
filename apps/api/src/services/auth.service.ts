@@ -220,7 +220,7 @@ export function createAuthService(config: AppConfig, logger: Logger) {
     });
 
     logger.info({ userId: user.id }, 'Password reset token generated');
-    return { message: 'If the email exists, a reset link has been sent', resetToken: token };
+    return { message: 'If the email exists, a reset link has been sent' };
   }
 
   async function resetPassword(token: string, newPassword: string) {

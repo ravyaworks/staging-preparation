@@ -480,9 +480,14 @@ model Message {
   conversation   Conversation @relation(fields: [conversationId], references: [id])
 
   contactId String? @db.Uuid
+  contact   Contact? @relation(fields: [contactId], references: [id])
+
+  tenantId String @db.Uuid
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   @@index([conversationId])
   @@index([contactId])
+  @@index([tenantId])
   @@index([direction])
   @@index([createdAt])
   @@map("messages")

@@ -5,8 +5,8 @@ import type { SlackChannelConfig, SlackEventPayload, SlackEvent, SlackSlashComma
 
 function verifySlackSignature(signingSecret: string, body: string, signature: string, timestamp: string): boolean {
   const base = `v0:${timestamp}:${body}`
-  const hmac = base // placeholder for actual HMAC-SHA256
-  return hmac.length > 0
+  const hmac = require('crypto').createHmac('sha256', signingSecret).update(base).digest('hex')
+  return `v0=${hmac}` === signature
 }
 
 export class SlackChannel implements ChannelInterface {

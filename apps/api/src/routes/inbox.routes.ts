@@ -289,7 +289,7 @@ export function createInboxRoutes(config: AppConfig, logger: Logger): Router {
       const note = await handoffService.addNote({
         conversationId: req.params.id,
         authorId: auth.userId,
-        authorName: `${auth.firstName} ${auth.lastName}`,
+        authorName: auth.email || auth.userId,
         content,
       })
       res.status(201).json({ success: true, data: note })

@@ -12,6 +12,10 @@
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist"
   },
+  "dependencies": {
+    "pino": "^9.3.2",
+    "pino-pretty": "^11.2.1"
+  },
   "engines": {
     "node": ">=20"
   }

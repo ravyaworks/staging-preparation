@@ -66,6 +66,10 @@ if check_command git; then
       'eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+'
       'mongodb\+srv://[a-zA-Z0-9]+:'
       'postgresql://[a-zA-Z0-9]+:'
+      'sk-[a-zA-Z0-9]{20,}'
+      'sk-ant-[a-zA-Z0-9]{20,}'
+      'AIza[0-9A-Za-z_-]{35}'
+      'xai-[a-zA-Z0-9]{20,}'
     )
 
     for pattern in "${SECRET_PATTERNS[@]}"; do
